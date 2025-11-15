@@ -9,7 +9,33 @@ import xml2js from 'xml2js';
 import { setDocumentsStore } from './chat.js';
 
 const router = express.Router();
+const DOCUMENTS_FILE = './documents.json';
+
+// Load documents from file on startup
 let documents = [];
+const loadDocuments = async () => {
+  try {
+    const data = await fs.readFile(DOCUMENTS_FILE, 'utf-8');
+    documents = JSON.parse(data);
+    setDocumentsStore(documents);
+    console.log(`Loaded ${documents.length} documents from storage`);
+  } catch (error) {
+    console.log('No existing documents file, starting fresh');
+    documents = [];
+  }
+};
+
+// Save documents to file
+const saveDocuments = async () => {
+  try {
+    await fs.writeFile(DOCUMENTS_FILE, JSON.stringify(documents, null, 2));
+  } catch (error) {
+    console.error('Failed to save documents:', error);
+  }
+};
+
+// Initialize documents on startup
+loadDocuments();
 
 
 // Configure multer for file uploads
@@ -68,7 +94,8 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
     documents.push(fileInfo);
     
-    // Update the documents store in chat route
+    // Save to file and update chat store
+    await saveDocuments();
     setDocumentsStore(documents);
 
     res.json({
@@ -114,7 +141,8 @@ router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     documents = documents.filter(doc => doc.id.toString() !== id);
     
-    // Update the documents store in chat route
+    // Save to file and update chat store
+    await saveDocuments();
     setDocumentsStore(documents);
     
     res.json({ message: 'Document deleted successfully' });

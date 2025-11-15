@@ -102,7 +102,8 @@ function buildPrompt(message, context, documentIds = [], language = 'en') {
     'ml': 'Malayalam (മലയാളം)',
     'bn': 'Bengali (বাংলা)',
     'ne': 'Nepali (नेपाली)',
-    'mai': 'Maithili (मैथिली)'
+    'mai': 'Maithili (मैथिली)',
+    'kn': 'Kannada (ಕನ್ನಡ)'
   };
   const languageName = languageNames[language] || 'English';
   let prompt = '';
@@ -197,7 +198,11 @@ function buildPrompt(message, context, documentIds = [], language = 'en') {
   } else {
     prompt += `⚠️ **No documents uploaded yet.**\n`;
     prompt += `- Use your general AI knowledge to answer\n`;
-    prompt += `- Start response with: "🧠 Based on general knowledge:"\n\n`;
+    prompt += `- Start response with: "🧠 Based on general knowledge:"\n`;
+    if (language !== 'en') {
+      prompt += `- Remember: respond in ${languageName} only\n`;
+    }
+    prompt += `\n`;
   }
 
   prompt += `**FORMATTING RULES:**\n`;
@@ -221,14 +226,14 @@ function buildPrompt(message, context, documentIds = [], language = 'en') {
   if (language !== 'en') {
     console.log('✅ Adding language instruction for:', languageName);
     prompt += `🌍 **LANGUAGE REQUIREMENT (CRITICAL):**\n`;
-    prompt += `- You MUST respond in ${languageName}\n`;
-    prompt += `- The user's question may be in English, but your ENTIRE response must be in ${languageName}\n`;
-    prompt += `- Translate ALL content including headings, explanations, examples, and lists\n`;
-    prompt += `- Keep markdown formatting intact (**, ##, -, etc.)\n`;
-    prompt += `- Maintain professional tone in ${languageName}\n`;
-    prompt += `- Do NOT mix languages - use ONLY ${languageName}\n\n`;
+    prompt += `- You MUST respond ENTIRELY in ${languageName}\n`;
+    prompt += `- User question language doesn't matter - respond ONLY in ${languageName}\n`;
+    prompt += `- Translate ALL content: headings, text, examples, lists, everything\n`;
+    prompt += `- Keep markdown formatting (**, ##, -, etc.) but translate the text\n`;
+    prompt += `- Use natural, fluent ${languageName} - not literal translation\n`;
+    prompt += `- NEVER mix languages - pure ${languageName} only\n\n`;
   } else {
-    console.log('✅ Using English (no language instruction added)');
+    console.log('✅ Using English');
   }
 
   prompt += `---\n\n`;

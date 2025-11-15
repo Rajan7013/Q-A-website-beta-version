@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Brain, User, Target, FileCheck, Loader, Volume2, VolumeX, Pause, Play, Globe, Trash2, Copy, Mic, MicOff, Download, Search, X, ChevronUp, ChevronDown, Lightbulb, Sparkles, Pin, PinOff, BarChart3, Share2, Type, Plus, Minus } from 'lucide-react';
-import { sendMessage, saveChatSession, incrementStat, logActivity } from '../utils/api';
+import { Send, Brain, User, Target, FileCheck, Loader, Volume2, VolumeX, Pause, Play, Globe, Trash2, Copy, Mic, MicOff, Download, Search, X, ChevronUp, ChevronDown, Lightbulb, Sparkles, Pin, PinOff, BarChart3, Share2, Type, Plus, Minus, MessageSquare, Edit3, MoreVertical } from 'lucide-react';
+import { sendMessage, saveChatSession, incrementStat, logActivity, updateSettings, getChatMessages } from '../utils/api';
+import { Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
+const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessionChange, currentSessionId, chatSessions, onNewChat, onDeleteChat, onRenameChat, onChatSave }) => {
   const [chatMessages, setChatMessages] = useState([
     { 
       id: 1, 
@@ -14,6 +15,7 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
       sources: []
     }
   ]);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [chatContext, setChatContext] = useState({
@@ -35,6 +37,9 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
   const [showStats, setShowStats] = useState(false);
   const [fontSize, setFontSize] = useState('base'); // 'sm', 'base', 'lg', 'xl'
   const [showFontControl, setShowFontControl] = useState(false);
+  const [showChatManager, setShowChatManager] = useState(false);
+  const [editingChatId, setEditingChatId] = useState(null);
+  const [editingChatTitle, setEditingChatTitle] = useState('');
   const chatEndRef = useRef(null);
   const speechSynthesisRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -44,18 +49,59 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
   useEffect(() => {
     if (settings?.language) {
       setSelectedLanguage(settings.language);
+      console.log('🔄 Language synced from settings:', settings.language);
     }
   }, [settings]);
 
+  // Load chat messages when session changes
+  useEffect(() => {
+    const loadChatMessages = async () => {
+      if (sessionId && sessionId !== 'session-' + Date.now()) {
+        setIsLoadingChat(true);
+        try {
+          const messages = await getChatMessages(userId, sessionId);
+          if (messages && messages.length > 0) {
+            setChatMessages(messages);
+            console.log('✅ Loaded', messages.length, 'messages for session:', sessionId);
+          } else {
+            // New session, start with welcome message
+            setChatMessages([{
+              id: 1,
+              type: 'bot',
+              text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              sources: []
+            }]);
+          }
+        } catch (error) {
+          console.error('Failed to load chat messages:', error);
+          // Start with welcome message on error
+          setChatMessages([{
+            id: 1,
+            type: 'bot',
+            text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            sources: []
+          }]);
+        } finally {
+          setIsLoadingChat(false);
+        }
+      }
+    };
+
+    loadChatMessages();
+  }, [sessionId, userId]);
+
   const languageOptions = [
     { value: 'en', label: '🇬🇧 English' },
-    { value: 'hi', label: '🇮🇳 Hindi' },
-    { value: 'te', label: '🇮🇳 Telugu' },
-    { value: 'ta', label: '🇮🇳 Tamil' },
-    { value: 'ml', label: '🇮🇳 Malayalam' },
-    { value: 'bn', label: '🇮🇳 Bengali' },
-    { value: 'ne', label: '🇳🇵 Nepali' },
-    { value: 'mai', label: '🇮🇳 Maithili' }
+    { value: 'hi', label: '🇮🇳 Hindi (हिंदी)' },
+    { value: 'te', label: '🇮🇳 Telugu (తెలుగు)' },
+    { value: 'ta', label: '🇮🇳 Tamil (தமிழ்)' },
+    { value: 'ml', label: '🇮🇳 Malayalam (മലയാളം)' },
+    { value: 'bn', label: '🇮🇳 Bengali (বাংলা)' },
+    { value: 'ne', label: '🇳🇵 Nepali (नेपाली)' },
+    { value: 'mai', label: '🇮🇳 Maithili (मैथिली)' },
+    { value: 'kn', label: '🇮🇳 Kannada (ಕನ್ನಡ)' }
   ];
 
   useEffect(() => {
@@ -75,41 +121,84 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
       'ml': 'ml-IN',
       'bn': 'bn-IN',
       'ne': 'ne-NP',
-      'mai': 'hi-IN' // Fallback to Hindi for Maithili
+      'mai': 'hi-IN', // Fallback to Hindi for Maithili
+      'kn': 'kn-IN'
     };
     
     const langCode = langCodeMap[language] || 'en-IN';
+    const baseLang = langCode.split('-')[0];
     
-    // Try to find Indian female voice for the language
+    console.log('🔊 TTS Debug:', {
+      selectedLanguage: language,
+      mappedLangCode: langCode,
+      baseLang: baseLang,
+      availableVoices: voices.map(v => ({ name: v.name, lang: v.lang }))
+    });
+    
+    // Priority 1: Exact language match with Indian accent
     let voice = voices.find(v => 
-      v.lang.startsWith(langCode.split('-')[0]) && 
-      v.name.toLowerCase().includes('female')
+      v.lang === langCode && 
+      (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'))
     );
     
-    // Fallback to any Indian voice
-    if (!voice) {
-      voice = voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
-    }
-    
-    // Fallback to Indian English female voice
+    // Priority 2: Base language match with Indian accent
     if (!voice) {
       voice = voices.find(v => 
-        v.lang.includes('IN') && 
-        v.name.toLowerCase().includes('female')
+        v.lang.startsWith(baseLang) && 
+        v.lang.includes('IN') &&
+        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'))
       );
     }
     
-    // Final fallback to any Indian voice
+    // Priority 3: Any voice for the exact language
+    if (!voice) {
+      voice = voices.find(v => v.lang === langCode);
+    }
+    
+    // Priority 4: Any voice for the base language with Indian accent
+    if (!voice) {
+      voice = voices.find(v => 
+        v.lang.startsWith(baseLang) && 
+        v.lang.includes('IN')
+      );
+    }
+    
+    // Priority 5: Any voice for the base language
+    if (!voice) {
+      voice = voices.find(v => v.lang.startsWith(baseLang));
+    }
+    
+    // Priority 6: Indian English female voice as fallback
+    if (!voice) {
+      voice = voices.find(v => 
+        v.lang.includes('en-IN') && 
+        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'))
+      );
+    }
+    
+    // Priority 7: Any Indian voice
     if (!voice) {
       voice = voices.find(v => v.lang.includes('IN'));
     }
     
-    // Last resort: any female voice
+    // Priority 8: Any female voice
     if (!voice) {
-      voice = voices.find(v => v.name.toLowerCase().includes('female'));
+      voice = voices.find(v => 
+        v.name.toLowerCase().includes('female') || 
+        v.name.toLowerCase().includes('woman')
+      );
     }
     
-    return voice || voices[0];
+    // Last resort: first available voice
+    const selectedVoice = voice || voices[0];
+    
+    console.log('🔊 Selected Voice:', {
+      name: selectedVoice?.name,
+      lang: selectedVoice?.lang,
+      forLanguage: language
+    });
+    
+    return selectedVoice;
   };
 
   const stripMarkdown = (text) => {
@@ -144,37 +233,63 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
     // Clean text from markdown
     const cleanText = stripMarkdown(text);
     
+    // Use the most current language (prioritize selectedLanguage)
+    const currentLanguage = selectedLanguage || settings?.language || 'en';
+    console.log('🔊 Speaking in language:', currentLanguage, 'Selected:', selectedLanguage, 'Settings:', settings?.language);
+    
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    const language = settings?.language || 'en';
-    const voice = getIndianFemaleVoice(language);
+    const voice = getIndianFemaleVoice(currentLanguage);
     
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
+      console.log('🔊 Using voice:', voice.name, 'with lang:', voice.lang);
+    } else {
+      // Fallback language mapping
+      const langCodeMap = {
+        'en': 'en-IN',
+        'hi': 'hi-IN',
+        'te': 'te-IN',
+        'ta': 'ta-IN',
+        'ml': 'ml-IN',
+        'bn': 'bn-IN',
+        'ne': 'ne-NP',
+        'mai': 'hi-IN',
+        'kn': 'kn-IN'
+      };
+      utterance.lang = langCodeMap[currentLanguage] || 'en-IN';
+      console.log('🔊 No voice found, using lang code:', utterance.lang);
     }
     
     // Speech parameters for natural Indian accent
-    utterance.rate = 0.9; // Slightly slower for clarity
+    utterance.rate = 0.85; // Slightly slower for clarity in different languages
     utterance.pitch = 1.1; // Slightly higher for female voice
     utterance.volume = 1.0;
     
     utterance.onstart = () => {
       setSpeakingMessageId(messageId);
       setIsPaused(false);
+      console.log('🔊 Speech started for language:', currentLanguage);
     };
     
     utterance.onend = () => {
       setSpeakingMessageId(null);
       setIsPaused(false);
+      console.log('🔊 Speech ended');
     };
     
-    utterance.onerror = () => {
+    utterance.onerror = (event) => {
       setSpeakingMessageId(null);
       setIsPaused(false);
+      console.error('🔊 Speech error:', event.error);
     };
     
     speechSynthesisRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    
+    // Small delay to ensure voice is loaded
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 100);
   };
 
   const pauseSpeech = () => {
@@ -243,12 +358,18 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
     };
   }, []);
 
-  // Load voices on component mount
+  // Load voices on component mount and when language changes
   useEffect(() => {
     const loadVoices = () => {
-      window.speechSynthesis.getVoices();
+      const voices = window.speechSynthesis.getVoices();
+      console.log('🔊 Voices loaded:', voices.length, 'voices available');
+      console.log('🔊 Available languages:', [...new Set(voices.map(v => v.lang))].sort());
     };
+    
+    // Load voices immediately
     loadVoices();
+    
+    // Also load when voices change (some browsers load voices asynchronously)
     if (window.speechSynthesis.onvoiceschanged !== undefined) {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
@@ -258,6 +379,23 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
       window.speechSynthesis.cancel();
     };
   }, []);
+  
+  // Re-load voices when language changes
+  useEffect(() => {
+    if (settings?.language || selectedLanguage) {
+      const currentLang = settings?.language || selectedLanguage;
+      console.log('🔊 Language changed to:', currentLang);
+      
+      // Force reload voices to ensure they're available
+      setTimeout(() => {
+        const voices = window.speechSynthesis.getVoices();
+        const voice = getIndianFemaleVoice(currentLang);
+        console.log('🔊 Voice for', currentLang, ':', voice?.name, voice?.lang);
+      }, 500);
+    }
+  }, [settings?.language, selectedLanguage]);
+  
+
 
   // Clear chat function
   const handleClearChat = () => {
@@ -270,9 +408,15 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
         sources: []
       }]);
       setChatContext({ topic: null, intent: null });
+      
+      // Start new chat session
+      if (onNewChat) {
+        onNewChat();
+      }
+      
       // Show success message
       const notification = document.createElement('div');
-      notification.textContent = '✅ Chat cleared successfully!';
+      notification.textContent = '✅ New chat started!';
       notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 2000);
@@ -975,9 +1119,11 @@ Exported on: ${new Date().toLocaleString()}
         .filter(doc => doc.status === 'processed')
         .map(doc => ({ id: doc.id, name: doc.name, pages: doc.pages }));
 
-      const language = selectedLanguage || 'en';
-      console.log('🌍 Selected Language:', language, 'From:', selectedLanguage);
+      // Use the most current language setting
+      const language = selectedLanguage || settings?.language || 'en';
+      console.log('🌍 Using Language:', language, 'Selected:', selectedLanguage, 'Settings:', settings?.language);
       
+      console.log('🚀 Sending message with language:', language);
       const response = await sendMessage(
         inputMessage,
         sessionId,
@@ -985,6 +1131,7 @@ Exported on: ${new Date().toLocaleString()}
         chatContext,
         language
       );
+      console.log('🤖 AI Response received:', response.response?.substring(0, 100) + '...');
 
       const botMessage = {
         id: chatMessages.length + 2,
@@ -1009,7 +1156,10 @@ Exported on: ${new Date().toLocaleString()}
 
         // Save chat session
         const chatTitle = extractChatTitle([...chatMessages, userMessage, botMessage]);
-        await saveChatSession(userId, sessionId, chatTitle, [...chatMessages, userMessage, botMessage]);
+        const chatData = await saveChatSession(userId, sessionId, chatTitle, [...chatMessages, userMessage, botMessage]);
+        if (onChatSave) {
+          onChatSave(chatData.chat);
+        }
       } catch (statError) {
         console.error('Failed to update stats:', statError);
       }
@@ -1018,7 +1168,7 @@ Exported on: ${new Date().toLocaleString()}
       const errorMessage = {
         id: chatMessages.length + 2,
         type: 'bot',
-        text: 'Sorry, I encountered an error. Please try again.',
+        text: error.response?.data?.error || 'AI service is temporarily busy. Please try again in a moment.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources: []
       };
@@ -1108,6 +1258,103 @@ Exported on: ${new Date().toLocaleString()}
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] bg-gradient-to-br from-gray-900 to-black rounded-none md:rounded-2xl shadow-2xl overflow-hidden">
+
+      {/* Chat Manager */}
+      {showChatManager && (
+        <div className="absolute top-0 left-0 right-0 bottom-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto border border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-white">Chat Sessions</h3>
+              <button
+                onClick={() => setShowChatManager(false)}
+                className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            
+            {/* New Chat Button */}
+            <button
+              onClick={() => {
+                onNewChat();
+                setShowChatManager(false);
+              }}
+              className="w-full mb-4 p-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-bold hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              New Chat
+            </button>
+            
+            {/* Chat Sessions List */}
+            <div className="space-y-2">
+              {chatSessions.map((chat) => (
+                <div key={chat.id} className={`p-3 rounded-lg border transition-all ${
+                  currentSessionId === chat.id 
+                    ? 'bg-purple-600/20 border-purple-500' 
+                    : 'bg-gray-800 border-gray-700 hover:bg-gray-700'
+                }`}>
+                  {editingChatId === chat.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingChatTitle}
+                        onChange={(e) => setEditingChatTitle(e.target.value)}
+                        className="flex-1 bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            onRenameChat(chat.id, editingChatTitle);
+                            setEditingChatId(null);
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => {
+                          onRenameChat(chat.id, editingChatTitle);
+                          setEditingChatId(null);
+                        }}
+                        className="p-1 text-green-400 hover:bg-green-400/20 rounded"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => {
+                          onSessionChange(chat.id);
+                          setShowChatManager(false);
+                        }}
+                        className="flex-1 text-left"
+                      >
+                        <div className="text-white font-medium text-sm truncate">{chat.title}</div>
+                        <div className="text-gray-400 text-xs">{chat.time} • {chat.messages} messages</div>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingChatId(chat.id);
+                            setEditingChatTitle(chat.title);
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-400 hover:bg-blue-400/20 rounded"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteChat(chat.id)}
+                          className="p-1 text-gray-400 hover:text-red-400 hover:bg-red-400/20 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Context Info */}
       {chatContext.topic && (
@@ -1293,7 +1540,15 @@ Exported on: ${new Date().toLocaleString()}
 
       {/* Messages Container */}
       <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto space-y-3 sm:space-y-4 md:space-y-6">
-        {chatMessages.map((msg, msgIndex) => (
+        {isLoadingChat && (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center gap-3">
+              <Loader className="animate-spin w-6 h-6 text-purple-400" />
+              <span className="text-gray-300">Loading chat messages...</span>
+            </div>
+          </div>
+        )}
+        {!isLoadingChat && chatMessages.map((msg, msgIndex) => (
           <div 
             key={msg.id} 
             id={`message-${msgIndex}`}
@@ -1364,7 +1619,7 @@ Exported on: ${new Date().toLocaleString()}
                         <button
                           onClick={() => speakMessage(msg.id, msg.text)}
                           className="p-1 hover:bg-white/10 rounded transition-colors touch-manipulation"
-                          title="Read aloud (Indian female voice)"
+                          title={`Read aloud in ${languageOptions.find(l => l.value === (settings?.language || selectedLanguage))?.label || 'selected language'}`}
                         >
                           <Volume2 className="w-4 h-4 text-blue-400 hover:text-blue-300" />
                         </button>
@@ -1463,6 +1718,7 @@ Exported on: ${new Date().toLocaleString()}
           </div>
         )}
         
+
         <div className="flex justify-between items-center mt-2 sm:mt-3 px-1 sm:px-2">
           <div className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide">
             {/* Search Button */}
@@ -1544,29 +1800,63 @@ Exported on: ${new Date().toLocaleString()}
               💡 Examples
             </button>
             
+            {/* Chat Manager Button */}
+            <button 
+              onClick={() => setShowChatManager(true)}
+              className="flex items-center gap-1 text-[10px] sm:text-xs bg-purple-500/20 text-purple-300 px-2 sm:px-3 py-1 rounded-lg hover:bg-purple-500/40 active:bg-purple-500/60 active:scale-95 transition-all whitespace-nowrap touch-manipulation"
+              title="Manage chat sessions"
+            >
+              <MessageSquare className="w-3 h-3" />
+              <span className="hidden sm:inline">Chats</span>
+            </button>
+            
             {/* Language Selector */}
             <div className="relative inline-block">
               <select
                 value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="appearance-none bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 pr-6 sm:pr-7 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 active:scale-95 active:from-blue-800 active:to-purple-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 whitespace-nowrap touch-manipulation"
-                style={{
-                  colorScheme: 'dark'
+                onChange={async (e) => {
+                  const newLanguage = e.target.value;
+                  console.log('🌍 Chat language changed to:', newLanguage);
+                  
+                  // Update local state immediately
+                  setSelectedLanguage(newLanguage);
+                  
+                  // Update settings automatically (but don't block UI)
+                  const langName = languageOptions.find(l => l.value === newLanguage)?.label || newLanguage;
+                  
+                  // Show immediate success notification
+                  const notification = document.createElement('div');
+                  notification.textContent = `✅ ${langName} - AI will respond in this language`;
+                  notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                  document.body.appendChild(notification);
+                  setTimeout(() => notification.remove(), 2500);
+                  
+                  // Try to save settings in background (don't show errors)
+                  try {
+                    const updatedSettings = { ...settings, language: newLanguage };
+                    await updateSettings(userId, updatedSettings);
+                    setSettings(updatedSettings);
+                    console.log('✅ Settings saved successfully');
+                  } catch (error) {
+                    console.log('⚠️ Settings save failed, but language still works:', error);
+                    // Don't show error to user since language switching still works
+                  }
                 }}
-                title="Select AI Response Language"
+                className="appearance-none bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 pr-6 sm:pr-7 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 active:scale-95 transition-all whitespace-nowrap touch-manipulation"
+                style={{ colorScheme: 'dark' }}
+                title="Select AI Language"
               >
                 {languageOptions.map((lang) => (
-                  <option 
-                    key={lang.value} 
-                    value={lang.value}
-                    className="bg-gray-800 text-white font-bold py-2"
-                  >
+                  <option key={lang.value} value={lang.value} className="bg-gray-800 text-white py-2">
                     {lang.label}
                   </option>
                 ))}
               </select>
               <Globe className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-white pointer-events-none" />
             </div>
+
+            
+
           </div>
           <div className="flex items-center gap-2">
             {/* Share Chat Button */}
@@ -1598,14 +1888,14 @@ Exported on: ${new Date().toLocaleString()}
               <span className="hidden sm:inline">PDF</span>
             </button>
             
-            {/* Clear Chat Button */}
+            {/* New Chat Button */}
             <button
               onClick={handleClearChat}
-              className="flex items-center gap-1 text-[10px] sm:text-xs bg-red-500/20 text-red-300 px-2 sm:px-3 py-1 rounded-lg hover:bg-red-500/40 active:bg-red-500/60 active:scale-95 transition-all whitespace-nowrap touch-manipulation"
-              title="Clear all chat messages"
+              className="flex items-center gap-1 text-[10px] sm:text-xs bg-green-500/20 text-green-300 px-2 sm:px-3 py-1 rounded-lg hover:bg-green-500/40 active:bg-green-500/60 active:scale-95 transition-all whitespace-nowrap touch-manipulation"
+              title="Start new chat"
             >
-              <Trash2 className="w-3 h-3" />
-              <span className="hidden sm:inline">Clear</span>
+              <Plus className="w-3 h-3" />
+              <span className="hidden sm:inline">New</span>
             </button>
             
             {/* Copy Chat Button */}

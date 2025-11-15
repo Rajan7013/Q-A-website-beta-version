@@ -2,8 +2,9 @@ import express from 'express';
 
 const router = express.Router();
 
-// In-memory storage for chat history
+// In-memory storage for chat history and messages
 const chatHistories = new Map();
+const chatMessages = new Map(); // Store actual chat messages
 
 // Get recent chats for a user
 router.get('/:userId', (req, res) => {
@@ -52,10 +53,67 @@ router.post('/:userId', (req, res) => {
     
     chatHistories.set(userId, userChats);
     
+    // Store actual messages
+    chatMessages.set(sessionId, messages);
+    
     res.json({ message: 'Chat saved', chat: chatData });
   } catch (error) {
     console.error('Save chat error:', error);
     res.status(500).json({ error: 'Failed to save chat' });
+  }
+});
+
+// Get chat messages for a session
+router.get('/:userId/:sessionId', (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const messages = chatMessages.get(sessionId) || [];
+    res.json({ messages });
+  } catch (error) {
+    console.error('Get chat messages error:', error);
+    res.status(500).json({ error: 'Failed to get chat messages' });
+  }
+});
+
+// Delete chat session
+router.delete('/:userId/:sessionId', (req, res) => {
+  try {
+    const { userId, sessionId } = req.params;
+    
+    // Remove from chat histories
+    let userChats = chatHistories.get(userId) || [];
+    userChats = userChats.filter(chat => chat.sessionId !== sessionId);
+    chatHistories.set(userId, userChats);
+    
+    // Remove messages
+    chatMessages.delete(sessionId);
+    
+    res.json({ message: 'Chat deleted successfully' });
+  } catch (error) {
+    console.error('Delete chat error:', error);
+    res.status(500).json({ error: 'Failed to delete chat' });
+  }
+});
+
+// Rename chat session
+router.put('/:userId/:sessionId', (req, res) => {
+  try {
+    const { userId, sessionId } = req.params;
+    const { title } = req.body;
+    
+    let userChats = chatHistories.get(userId) || [];
+    const chatIndex = userChats.findIndex(chat => chat.sessionId === sessionId);
+    
+    if (chatIndex >= 0) {
+      userChats[chatIndex].title = title;
+      chatHistories.set(userId, userChats);
+      res.json({ message: 'Chat renamed successfully', chat: userChats[chatIndex] });
+    } else {
+      res.status(404).json({ error: 'Chat not found' });
+    }
+  } catch (error) {
+    console.error('Rename chat error:', error);
+    res.status(500).json({ error: 'Failed to rename chat' });
   }
 });
 

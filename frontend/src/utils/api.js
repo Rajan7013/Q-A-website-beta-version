@@ -209,4 +209,37 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
   }
 };
 
+// Get chat messages for a session
+export const getChatMessages = async (userId, sessionId) => {
+  try {
+    const response = await api.get(`/history/${userId}/${sessionId}`);
+    return response.data.messages;
+  } catch (error) {
+    console.error('Get chat messages error:', error);
+    throw error;
+  }
+};
+
+// Delete chat session
+export const deleteChatSession = async (userId, sessionId) => {
+  try {
+    const response = await api.delete(`/history/${userId}/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete chat session error:', error);
+    throw error;
+  }
+};
+
+// Rename chat session
+export const renameChatSession = async (userId, sessionId, title) => {
+  try {
+    const response = await api.put(`/history/${userId}/${sessionId}`, { title });
+    return response.data;
+  } catch (error) {
+    console.error('Rename chat session error:', error);
+    throw error;
+  }
+};
+
 export default api;

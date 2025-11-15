@@ -52,9 +52,10 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
             { value: 'ml', label: '🇮🇳 Malayalam (മലയാളം)' },
             { value: 'bn', label: '🇮🇳 Bengali (বাংলা)' },
             { value: 'ne', label: '🇳🇵 Nepali (नेपाली)' },
-            { value: 'mai', label: '🇮🇳 Maithili (मैथिली)' }
+            { value: 'mai', label: '🇮🇳 Maithili (मैथिली)' },
+            { value: 'kn', label: '🇮🇳 Kannada (ಕನ್ನಡ)' }
           ],
-          description: 'AI will respond in your selected language'
+          description: 'AI will respond and speak in your selected language (9 languages supported)'
         }
       ]
     },
@@ -90,7 +91,7 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white">
             Settings
           </h1>
-          <p className="text-sm sm:text-lg md:text-xl text-gray-400 px-4">Customize your AI Document Analyzer experience</p>
+          <p className="text-sm sm:text-lg md:text-xl text-gray-400 px-4">Customize your AI experience - 9 languages supported</p>
         </div>
 
         {/* Settings Sections */}
