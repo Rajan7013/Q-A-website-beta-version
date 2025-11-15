@@ -20,9 +20,9 @@ const loadChatData = async () => {
       const historiesData = await fs.readFile(CHAT_HISTORIES_FILE, 'utf-8');
       const historiesObj = JSON.parse(historiesData);
       chatHistories = new Map(Object.entries(historiesObj));
-      console.log(`📚 Loaded chat histories for ${chatHistories.size} users`);
+      console.log(`📚 Loaded ${chatHistories.size} chat histories`);
     } catch (error) {
-      console.log('📚 No existing chat histories file, starting fresh');
+      console.log('📚 Starting fresh');
       chatHistories = new Map();
     }
     
@@ -31,9 +31,9 @@ const loadChatData = async () => {
       const messagesData = await fs.readFile(CHAT_MESSAGES_FILE, 'utf-8');
       const messagesObj = JSON.parse(messagesData);
       chatMessages = new Map(Object.entries(messagesObj));
-      console.log(`💬 Loaded messages for ${chatMessages.size} chat sessions`);
+      console.log(`💬 Loaded ${chatMessages.size} sessions`);
     } catch (error) {
-      console.log('💬 No existing chat messages file, starting fresh');
+      console.log('💬 Starting fresh');
       chatMessages = new Map();
     }
   } catch (error) {
@@ -41,8 +41,23 @@ const loadChatData = async () => {
   }
 };
 
-// Save data to files
-const saveChatData = async () => {
+// Save data to files with debouncing
+let saveTimeout = null;
+const saveChatData = async (immediate = false) => {
+  if (!immediate && saveTimeout) {
+    return; // Already scheduled
+  }
+  
+  if (!immediate) {
+    // Debounce saves - wait 2 seconds before saving
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      saveChatData(true);
+      saveTimeout = null;
+    }, 2000);
+    return;
+  }
+  
   try {
     // Save chat histories
     const historiesObj = Object.fromEntries(chatHistories);
@@ -52,7 +67,7 @@ const saveChatData = async () => {
     const messagesObj = Object.fromEntries(chatMessages);
     await fs.writeFile(CHAT_MESSAGES_FILE, JSON.stringify(messagesObj, null, 2));
     
-    console.log('💾 Chat data saved successfully');
+    console.log('💾 Chat data saved');
   } catch (error) {
     console.error('Failed to save chat data:', error);
   }
@@ -61,8 +76,8 @@ const saveChatData = async () => {
 // Initialize data on startup
 loadChatData();
 
-// Auto-save every 30 seconds
-setInterval(saveChatData, 30000);
+// Auto-save every 30 seconds (immediate)
+setInterval(() => saveChatData(true), 30000);
 
 // Get recent chats for a user
 router.get('/:userId', (req, res) => {
@@ -114,8 +129,8 @@ router.post('/:userId', (req, res) => {
     // Store actual messages
     chatMessages.set(sessionId, messages);
     
-    // Save to file immediately for important data
-    saveChatData().catch(console.error);
+    // Schedule save (debounced)
+    saveChatData();
     
     res.json({ message: 'Chat saved', chat: chatData });
   } catch (error) {
@@ -149,8 +164,8 @@ router.delete('/:userId/:sessionId', (req, res) => {
     // Remove messages
     chatMessages.delete(sessionId);
     
-    // Save to file immediately
-    saveChatData().catch(console.error);
+    // Schedule save (debounced)
+    saveChatData();
     
     res.json({ message: 'Chat deleted successfully' });
   } catch (error) {
@@ -172,8 +187,8 @@ router.put('/:userId/:sessionId', (req, res) => {
       userChats[chatIndex].title = title;
       chatHistories.set(userId, userChats);
       
-      // Save to file immediately
-      saveChatData().catch(console.error);
+      // Schedule save (debounced)
+      saveChatData();
       
       res.json({ message: 'Chat renamed successfully', chat: userChats[chatIndex] });
     } else {
@@ -214,14 +229,14 @@ function getRelativeTime(date) {
 // Graceful shutdown - save data before exit
 process.on('SIGINT', async () => {
   console.log('\n🔄 Saving chat data before shutdown...');
-  await saveChatData();
+  await saveChatData(true);
   console.log('✅ Chat data saved. Shutting down gracefully.');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('\n🔄 Saving chat data before shutdown...');
-  await saveChatData();
+  await saveChatData(true);
   console.log('✅ Chat data saved. Shutting down gracefully.');
   process.exit(0);
 });

@@ -22,8 +22,10 @@ export function getDocumentsStore() {
 router.post('/message', async (req, res) => {
   try {
     const { message, sessionId, documents, context, language = 'en', userApiKey } = req.body;
-    console.log('🌍 Backend received language:', language);
-    console.log('🔑 Using user API key:', userApiKey ? 'Yes' : 'No (fallback to system key)');
+    // Only log language changes and API key usage occasionally
+    if (Math.random() < 0.1) { // Log 10% of requests to reduce spam
+      console.log('🌍 Language:', language, '| API Key:', userApiKey ? 'User' : 'System');
+    }
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
