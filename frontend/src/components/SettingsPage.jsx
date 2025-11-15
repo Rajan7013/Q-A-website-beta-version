@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Bell, Globe, Shield, Database, Zap, Check, Save } from 'lucide-react';
-import { updateSettings } from '../utils/api';
+import { Settings, Bell, Globe, Shield, Database, Zap, Check, Save, Key, AlertCircle, CheckCircle, Eye, EyeOff, ExternalLink, Copy } from 'lucide-react';
+import { updateSettings, validateGeminiKey } from '../utils/api';
 
 const SettingsPage = ({ settings, setSettings, userId }) => {
-  const [localSettings, setLocalSettings] = useState(settings || { language: 'en', notifications: true, autoSave: true });
+  const [localSettings, setLocalSettings] = useState(settings || { language: 'en', notifications: true, autoSave: true, geminiApiKey: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [validatingKey, setValidatingKey] = useState(false);
+  const [keyValidation, setKeyValidation] = useState(null); // null, 'valid', 'invalid'
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Sync localSettings with settings prop changes
   useEffect(() => {
@@ -17,6 +21,54 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
   const handleChange = (key, value) => {
     setLocalSettings({ ...localSettings, [key]: value });
     setSaved(false);
+    if (key === 'geminiApiKey') {
+      setKeyValidation(null); // Reset validation when key changes
+    }
+  };
+
+  const validateApiKey = async () => {
+    if (!localSettings.geminiApiKey?.trim()) {
+      alert('Please enter your Gemini API key first');
+      return;
+    }
+
+    setValidatingKey(true);
+    try {
+      const result = await validateGeminiKey(localSettings.geminiApiKey.trim());
+      setKeyValidation(result.valid ? 'valid' : 'invalid');
+      
+      if (result.valid) {
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.textContent = '✅ API Key is valid and working!';
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+      } else {
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.textContent = '❌ Invalid API Key. Please check and try again.';
+        notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+      }
+    } catch (error) {
+      console.error('API key validation failed:', error);
+      setKeyValidation('invalid');
+      alert('Failed to validate API key. Please check your internet connection and try again.');
+    } finally {
+      setValidatingKey(false);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      const notification = document.createElement('div');
+      notification.textContent = '✅ Copied to clipboard!';
+      notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 2000);
+    });
   };
 
   const handleSave = async () => {
@@ -35,6 +87,19 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
   };
 
   const settingSections = [
+    {
+      title: 'Your Personal Gemini API Key',
+      icon: Key,
+      color: 'from-orange-400 to-red-500',
+      settings: [
+        {
+          key: 'geminiApiKey',
+          label: 'Gemini API Key',
+          type: 'apikey',
+          description: 'Your personal Google Gemini API key for unlimited usage. This is stored securely and only you can see it.'
+        }
+      ]
+    },
     {
       title: 'Language & Region',
       icon: Globe,
@@ -92,6 +157,36 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
             Settings
           </h1>
           <p className="text-sm sm:text-lg md:text-xl text-gray-400 px-4">Customize your AI experience - 9 languages supported</p>
+          
+          {/* API Key Status Banner */}
+          {!localSettings.geminiApiKey?.trim() ? (
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-xl mx-4 shadow-lg">
+              <div className="flex items-center gap-3 justify-center">
+                <AlertCircle className="w-5 h-5" />
+                <div className="text-sm font-bold">
+                  ⚠️ Add your personal Gemini API key below for unlimited usage!
+                </div>
+              </div>
+            </div>
+          ) : keyValidation === 'valid' ? (
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl mx-4 shadow-lg">
+              <div className="flex items-center gap-3 justify-center">
+                <CheckCircle className="w-5 h-5" />
+                <div className="text-sm font-bold">
+                  ✅ Your personal API key is active - Unlimited usage!
+                </div>
+              </div>
+            </div>
+          ) : localSettings.geminiApiKey?.trim() && keyValidation === 'invalid' ? (
+            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-4 rounded-xl mx-4 shadow-lg">
+              <div className="flex items-center gap-3 justify-center">
+                <AlertCircle className="w-5 h-5" />
+                <div className="text-sm font-bold">
+                  ❌ API key needs validation - Click "Validate Key" below
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Settings Sections */}
@@ -141,6 +236,129 @@ const SettingsPage = ({ settings, setSettings, userId }) => {
                             </option>
                           ))}
                         </select>
+                      ) : setting.type === 'apikey' ? (
+                        <div className="w-full space-y-4">
+                          {/* API Key Input */}
+                          <div className="relative">
+                            <input
+                              type={showApiKey ? 'text' : 'password'}
+                              value={localSettings[setting.key] || ''}
+                              onChange={(e) => handleChange(setting.key, e.target.value)}
+                              placeholder="AIzaSy... (paste your Gemini API key here)"
+                              className="w-full bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-300 text-gray-800 pr-12"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowApiKey(!showApiKey)}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                            </button>
+                          </div>
+                          
+                          {/* Validation Status */}
+                          {keyValidation && (
+                            <div className={`flex items-center gap-2 text-sm font-bold ${
+                              keyValidation === 'valid' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {keyValidation === 'valid' ? (
+                                <><CheckCircle className="w-4 h-4" /> API Key is valid and working!</>
+                              ) : (
+                                <><AlertCircle className="w-4 h-4" /> Invalid API Key. Please check and try again.</>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Action Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={validateApiKey}
+                              disabled={validatingKey || !localSettings[setting.key]?.trim()}
+                              className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg font-bold hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+                            >
+                              {validatingKey ? (
+                                <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Validating...</>
+                              ) : (
+                                <><CheckCircle className="w-4 h-4" /> Validate Key</>
+                              )}
+                            </button>
+                            
+                            <button
+                              onClick={() => setShowGuide(!showGuide)}
+                              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-bold hover:from-blue-600 hover:to-cyan-600 transition-all text-sm"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                              {showGuide ? 'Hide Guide' : 'How to Get API Key'}
+                            </button>
+                          </div>
+                          
+                          {/* Step-by-Step Guide */}
+                          {showGuide && (
+                            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-6 space-y-4">
+                              <h3 className="text-lg font-black text-blue-800 flex items-center gap-2">
+                                <Key className="w-5 h-5" />
+                                How to Get Your Free Gemini API Key
+                              </h3>
+                              
+                              <div className="space-y-3 text-sm text-blue-700">
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">1</div>
+                                  <div>
+                                    <p className="font-bold">Visit Google AI Studio</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <code className="bg-blue-100 px-2 py-1 rounded text-xs font-mono">https://ai.google.dev/</code>
+                                      <button
+                                        onClick={() => copyToClipboard('https://ai.google.dev/')}
+                                        className="text-blue-600 hover:text-blue-800"
+                                      >
+                                        <Copy className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">2</div>
+                                  <div>
+                                    <p className="font-bold">Click "Get API Key" button</p>
+                                    <p className="text-xs text-blue-600 mt-1">Sign in with your Google account if needed</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">3</div>
+                                  <div>
+                                    <p className="font-bold">Create a new API key</p>
+                                    <p className="text-xs text-blue-600 mt-1">Choose "Create API key in new project" for simplicity</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">4</div>
+                                  <div>
+                                    <p className="font-bold">Copy your API key</p>
+                                    <p className="text-xs text-blue-600 mt-1">It starts with "AIzaSy..." - copy the entire key</p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-start gap-3">
+                                  <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold text-xs flex-shrink-0 mt-0.5">5</div>
+                                  <div>
+                                    <p className="font-bold">Paste it above and click "Validate Key"</p>
+                                    <p className="text-xs text-blue-600 mt-1">We'll test it to make sure it works perfectly</p>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="bg-green-100 border border-green-300 rounded-lg p-3">
+                                <p className="text-green-800 text-xs font-bold flex items-center gap-2">
+                                  <Shield className="w-4 h-4" />
+                                  Your API key is stored securely on your device only. No one else can see or use it.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       ) : null}
                     </div>
                   </div>

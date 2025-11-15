@@ -11,11 +11,18 @@ import { getDocuments, getProfile, getSettings, getStats, incrementStat, unlockA
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [userId] = useState(() => {
-    // Get or create persistent user ID
+    // Get or create persistent user ID with better uniqueness
     let storedUserId = localStorage.getItem('ai-doc-analyzer-user-id');
     if (!storedUserId) {
-      storedUserId = 'user-' + Date.now();
+      // Create a more unique user ID
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(2, 15);
+      const browserFingerprint = navigator.userAgent.length + screen.width + screen.height;
+      storedUserId = `user-${timestamp}-${random}-${browserFingerprint}`;
       localStorage.setItem('ai-doc-analyzer-user-id', storedUserId);
+      console.log('🆆 Created new user ID:', storedUserId.substring(0, 20) + '...');
+    } else {
+      console.log('👤 Using existing user ID:', storedUserId.substring(0, 20) + '...');
     }
     return storedUserId;
   });
@@ -41,7 +48,7 @@ function App() {
       
       // Fetch all data in parallel
       const [docs, profile, userSettings, userStats, chats] = await Promise.all([
-        getDocuments(),
+        getDocuments(userId),
         getProfile(userId),
         getSettings(userId),
         getStats(userId),
@@ -94,15 +101,23 @@ function App() {
   };
 
   const handleNewChat = () => {
-    const newSessionId = 'session-' + Date.now();
+    const newSessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
     setCurrentSessionId(newSessionId);
     localStorage.setItem('ai-doc-analyzer-current-session', newSessionId);
+    console.log('🆕 Created new chat session:', newSessionId);
   };
 
   const handleDeleteChat = async (sessionId) => {
-    if (window.confirm('Are you sure you want to delete this chat?')) {
+    if (window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
       try {
+        // Clear localStorage cache for this session
+        const localStorageKey = `chat-messages-${sessionId}`;
+        localStorage.removeItem(localStorageKey);
+        
+        // Delete from backend
         await deleteChatSession(userId, sessionId);
+        
+        // Update local state
         setChatSessions(prev => prev.filter(chat => chat.id !== sessionId));
         
         // If deleting current session, create new one
@@ -111,27 +126,68 @@ function App() {
         }
         
         console.log('✅ Chat deleted successfully');
+        
+        // Show success notification
+        const notification = document.createElement('div');
+        notification.textContent = '✅ Chat deleted successfully!';
+        notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+        
       } catch (error) {
         console.error('Failed to delete chat:', error);
-        alert('Failed to delete chat. Please try again.');
+        
+        // Still remove locally even if backend fails
+        const localStorageKey = `chat-messages-${sessionId}`;
+        localStorage.removeItem(localStorageKey);
+        setChatSessions(prev => prev.filter(chat => chat.id !== sessionId));
+        
+        // Show warning notification
+        const notification = document.createElement('div');
+        notification.textContent = '⚠️ Chat deleted locally (server offline)';
+        notification.className = 'fixed top-4 right-4 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
       }
     }
   };
 
   const handleRenameChat = async (sessionId, newTitle) => {
+    if (!newTitle || newTitle.trim().length === 0) {
+      alert('Please enter a valid chat title.');
+      return;
+    }
+    
     try {
-      await renameChatSession(userId, sessionId, newTitle);
+      await renameChatSession(userId, sessionId, newTitle.trim());
+      
+      // Update local state
       setChatSessions(prev => 
         prev.map(chat => 
           chat.id === sessionId 
-            ? { ...chat, title: newTitle }
+            ? { ...chat, title: newTitle.trim() }
             : chat
         )
       );
+      
       console.log('✅ Chat renamed successfully');
+      
+      // Show success notification
+      const notification = document.createElement('div');
+      notification.textContent = '✅ Chat renamed successfully!';
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+      
     } catch (error) {
       console.error('Failed to rename chat:', error);
-      alert('Failed to rename chat. Please try again.');
+      
+      // Show error notification
+      const notification = document.createElement('div');
+      notification.textContent = '❌ Failed to rename chat. Please try again.';
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
     }
   };
 
@@ -139,13 +195,37 @@ function App() {
     setChatSessions(prev => {
       const existingIndex = prev.findIndex(chat => chat.id === chatData.sessionId);
       if (existingIndex >= 0) {
+        // Update existing chat
         const updated = [...prev];
-        updated[existingIndex] = chatData;
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          ...chatData,
+          time: getRelativeTime(new Date()) // Update time
+        };
         return updated;
       } else {
-        return [chatData, ...prev];
+        // Add new chat to the beginning
+        return [{
+          ...chatData,
+          time: getRelativeTime(new Date())
+        }, ...prev];
       }
     });
+  };
+  
+  // Helper function for relative time
+  const getRelativeTime = (date) => {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString();
   };
 
   const renderPage = () => {
@@ -170,7 +250,7 @@ function App() {
           />
         );
       case 'upload':
-        return <UploadPage onDocumentUpload={handleDocumentUpload} />;
+        return <UploadPage onDocumentUpload={handleDocumentUpload} userId={userId} />;
       case 'documents':
         return <DocumentsPage uploadedDocs={uploadedDocs} onDocumentDelete={handleDocumentDelete} isLoading={false} />;
       case 'settings':
@@ -198,8 +278,10 @@ function App() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans">
       <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} userProfile={userProfile} />
-      <main className="p-2 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-4">
-        {renderPage()}
+      <main className="p-2 sm:p-3 md:p-4 lg:p-6 xl:p-8 pb-20 sm:pb-16 md:pb-4 max-w-full overflow-x-hidden min-h-[calc(100vh-60px)] sm:min-h-[calc(100vh-80px)]">
+        <div className="max-w-7xl mx-auto h-full">
+          {renderPage()}
+        </div>
       </main>
     </div>
   );

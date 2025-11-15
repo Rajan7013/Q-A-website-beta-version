@@ -1,10 +1,68 @@
 import express from 'express';
+import fs from 'fs/promises';
+import path from 'path';
 
 const router = express.Router();
 
-// In-memory storage for chat history and messages
-const chatHistories = new Map();
-const chatMessages = new Map(); // Store actual chat messages
+// File paths for persistent storage
+const CHAT_HISTORIES_FILE = './chat-histories.json';
+const CHAT_MESSAGES_FILE = './chat-messages.json';
+
+// In-memory cache for performance
+let chatHistories = new Map();
+let chatMessages = new Map();
+
+// Load data from files on startup
+const loadChatData = async () => {
+  try {
+    // Load chat histories
+    try {
+      const historiesData = await fs.readFile(CHAT_HISTORIES_FILE, 'utf-8');
+      const historiesObj = JSON.parse(historiesData);
+      chatHistories = new Map(Object.entries(historiesObj));
+      console.log(`📚 Loaded chat histories for ${chatHistories.size} users`);
+    } catch (error) {
+      console.log('📚 No existing chat histories file, starting fresh');
+      chatHistories = new Map();
+    }
+    
+    // Load chat messages
+    try {
+      const messagesData = await fs.readFile(CHAT_MESSAGES_FILE, 'utf-8');
+      const messagesObj = JSON.parse(messagesData);
+      chatMessages = new Map(Object.entries(messagesObj));
+      console.log(`💬 Loaded messages for ${chatMessages.size} chat sessions`);
+    } catch (error) {
+      console.log('💬 No existing chat messages file, starting fresh');
+      chatMessages = new Map();
+    }
+  } catch (error) {
+    console.error('Failed to load chat data:', error);
+  }
+};
+
+// Save data to files
+const saveChatData = async () => {
+  try {
+    // Save chat histories
+    const historiesObj = Object.fromEntries(chatHistories);
+    await fs.writeFile(CHAT_HISTORIES_FILE, JSON.stringify(historiesObj, null, 2));
+    
+    // Save chat messages
+    const messagesObj = Object.fromEntries(chatMessages);
+    await fs.writeFile(CHAT_MESSAGES_FILE, JSON.stringify(messagesObj, null, 2));
+    
+    console.log('💾 Chat data saved successfully');
+  } catch (error) {
+    console.error('Failed to save chat data:', error);
+  }
+};
+
+// Initialize data on startup
+loadChatData();
+
+// Auto-save every 30 seconds
+setInterval(saveChatData, 30000);
 
 // Get recent chats for a user
 router.get('/:userId', (req, res) => {
@@ -56,6 +114,9 @@ router.post('/:userId', (req, res) => {
     // Store actual messages
     chatMessages.set(sessionId, messages);
     
+    // Save to file immediately for important data
+    saveChatData().catch(console.error);
+    
     res.json({ message: 'Chat saved', chat: chatData });
   } catch (error) {
     console.error('Save chat error:', error);
@@ -88,6 +149,9 @@ router.delete('/:userId/:sessionId', (req, res) => {
     // Remove messages
     chatMessages.delete(sessionId);
     
+    // Save to file immediately
+    saveChatData().catch(console.error);
+    
     res.json({ message: 'Chat deleted successfully' });
   } catch (error) {
     console.error('Delete chat error:', error);
@@ -107,6 +171,10 @@ router.put('/:userId/:sessionId', (req, res) => {
     if (chatIndex >= 0) {
       userChats[chatIndex].title = title;
       chatHistories.set(userId, userChats);
+      
+      // Save to file immediately
+      saveChatData().catch(console.error);
+      
       res.json({ message: 'Chat renamed successfully', chat: userChats[chatIndex] });
     } else {
       res.status(404).json({ error: 'Chat not found' });
@@ -142,5 +210,20 @@ function getRelativeTime(date) {
   if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   return date.toLocaleDateString();
 }
+
+// Graceful shutdown - save data before exit
+process.on('SIGINT', async () => {
+  console.log('\n🔄 Saving chat data before shutdown...');
+  await saveChatData();
+  console.log('✅ Chat data saved. Shutting down gracefully.');
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  console.log('\n🔄 Saving chat data before shutdown...');
+  await saveChatData();
+  console.log('✅ Chat data saved. Shutting down gracefully.');
+  process.exit(0);
+});
 
 export default router;

@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessionChange, currentSessionId, chatSessions, onNewChat, onDeleteChat, onRenameChat, onChatSave }) => {
+  const [forceNewSession, setForceNewSession] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { 
       id: 1, 
@@ -56,33 +57,95 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
   // Load chat messages when session changes
   useEffect(() => {
     const loadChatMessages = async () => {
-      if (sessionId && sessionId !== 'session-' + Date.now()) {
+      if (sessionId) {
         setIsLoadingChat(true);
+        
+        // Reset context for new session
+        setChatContext({ topic: null, intent: null });
+        
         try {
-          const messages = await getChatMessages(userId, sessionId);
-          if (messages && messages.length > 0) {
-            setChatMessages(messages);
-            console.log('✅ Loaded', messages.length, 'messages for session:', sessionId);
-          } else {
-            // New session, start with welcome message
-            setChatMessages([{
+          // Check if this is a brand new session (created within last 5 seconds) or forced new
+          const sessionTimestamp = sessionId.split('-')[1];
+          const currentTime = Date.now();
+          const isNewSession = forceNewSession || (sessionTimestamp && (currentTime - parseInt(sessionTimestamp)) < 5000);
+          
+          // Reset force flag
+          if (forceNewSession) {
+            setForceNewSession(false);
+          }
+          
+          if (isNewSession) {
+            // For new sessions, always start fresh
+            const welcomeMessages = [{
               id: 1,
               type: 'bot',
               text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               sources: []
-            }]);
+            }];
+            setChatMessages(welcomeMessages);
+            const localStorageKey = `chat-messages-${sessionId}`;
+            localStorage.setItem(localStorageKey, JSON.stringify(welcomeMessages));
+            console.log('✅ Started fresh new session:', sessionId);
+          } else {
+            // For existing sessions, try to load from backend first
+            try {
+              const messages = await getChatMessages(userId, sessionId);
+              if (messages && messages.length > 0) {
+                setChatMessages(messages);
+                // Update localStorage cache
+                const localStorageKey = `chat-messages-${sessionId}`;
+                localStorage.setItem(localStorageKey, JSON.stringify(messages));
+                console.log('✅ Loaded', messages.length, 'messages from backend for session:', sessionId);
+              } else {
+                // Try localStorage as fallback
+                const localStorageKey = `chat-messages-${sessionId}`;
+                const cachedMessages = localStorage.getItem(localStorageKey);
+                
+                if (cachedMessages) {
+                  const messages = JSON.parse(cachedMessages);
+                  setChatMessages(messages);
+                  console.log('✅ Loaded', messages.length, 'messages from cache for session:', sessionId);
+                } else {
+                  // No data found, start with welcome message
+                  const welcomeMessages = [{
+                    id: 1,
+                    type: 'bot',
+                    text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
+                    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    sources: []
+                  }];
+                  setChatMessages(welcomeMessages);
+                  localStorage.setItem(localStorageKey, JSON.stringify(welcomeMessages));
+                  console.log('✅ No existing data, started with welcome message');
+                }
+              }
+            } catch (apiError) {
+              console.log('Backend unavailable, trying localStorage cache');
+              // Fallback to localStorage
+              const localStorageKey = `chat-messages-${sessionId}`;
+              const cachedMessages = localStorage.getItem(localStorageKey);
+              
+              if (cachedMessages) {
+                const messages = JSON.parse(cachedMessages);
+                setChatMessages(messages);
+                console.log('✅ Loaded', messages.length, 'messages from cache (backend offline)');
+              } else {
+                // Default welcome message
+                const welcomeMessages = [{
+                  id: 1,
+                  type: 'bot',
+                  text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  sources: []
+                }];
+                setChatMessages(welcomeMessages);
+                localStorage.setItem(localStorageKey, JSON.stringify(welcomeMessages));
+              }
+            }
           }
         } catch (error) {
           console.error('Failed to load chat messages:', error);
-          // Start with welcome message on error
-          setChatMessages([{
-            id: 1,
-            type: 'bot',
-            text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sources: []
-          }]);
         } finally {
           setIsLoadingChat(false);
         }
@@ -90,7 +153,30 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
     };
 
     loadChatMessages();
-  }, [sessionId, userId]);
+  }, [sessionId, userId, forceNewSession]);
+
+  // Save messages to localStorage and sync with backend whenever they change
+  useEffect(() => {
+    if (sessionId && chatMessages.length > 0) {
+      // Save to localStorage immediately
+      const localStorageKey = `chat-messages-${sessionId}`;
+      localStorage.setItem(localStorageKey, JSON.stringify(chatMessages));
+      console.log('💾 Cached', chatMessages.length, 'messages for session:', sessionId);
+      
+      // Sync with backend (debounced to avoid too many calls)
+      const syncTimeout = setTimeout(async () => {
+        try {
+          const chatTitle = extractChatTitle(chatMessages);
+          await saveChatSession(userId, sessionId, chatTitle, chatMessages);
+          console.log('🔄 Synced chat session with backend');
+        } catch (error) {
+          console.log('⚠️ Backend sync failed, data saved locally:', error.message);
+        }
+      }, 2000); // 2 second debounce
+      
+      return () => clearTimeout(syncTimeout);
+    }
+  }, [chatMessages, sessionId, userId]);
 
   const languageOptions = [
     { value: 'en', label: '🇬🇧 English' },
@@ -233,63 +319,101 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
     // Clean text from markdown
     const cleanText = stripMarkdown(text);
     
-    // Use the most current language (prioritize selectedLanguage)
-    const currentLanguage = selectedLanguage || settings?.language || 'en';
-    console.log('🔊 Speaking in language:', currentLanguage, 'Selected:', selectedLanguage, 'Settings:', settings?.language);
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    const voice = getIndianFemaleVoice(currentLanguage);
-    
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-      console.log('🔊 Using voice:', voice.name, 'with lang:', voice.lang);
-    } else {
-      // Fallback language mapping
-      const langCodeMap = {
-        'en': 'en-IN',
-        'hi': 'hi-IN',
-        'te': 'te-IN',
-        'ta': 'ta-IN',
-        'ml': 'ml-IN',
-        'bn': 'bn-IN',
-        'ne': 'ne-NP',
-        'mai': 'hi-IN',
-        'kn': 'kn-IN'
-      };
-      utterance.lang = langCodeMap[currentLanguage] || 'en-IN';
-      console.log('🔊 No voice found, using lang code:', utterance.lang);
+    // Ensure we have text to speak
+    if (!cleanText || cleanText.trim().length === 0) {
+      console.log('🔊 No text to speak');
+      return;
     }
     
-    // Speech parameters for natural Indian accent
-    utterance.rate = 0.85; // Slightly slower for clarity in different languages
+    // Use the most current language (prioritize selectedLanguage)
+    const currentLanguage = selectedLanguage || settings?.language || 'en';
+    console.log('🔊 Speaking in language:', currentLanguage, 'Text length:', cleanText.length, 'Text:', cleanText.substring(0, 50) + '...');
+    
+    // Force reload voices to ensure they're available
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // Voices not loaded yet, wait and try again
+      setTimeout(() => speakMessage(messageId, text), 200);
+      return;
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Language code mapping for speech synthesis
+    const langCodeMap = {
+      'en': 'en-IN',
+      'hi': 'hi-IN',
+      'te': 'te-IN',
+      'ta': 'ta-IN',
+      'ml': 'ml-IN',
+      'bn': 'bn-IN',
+      'ne': 'ne-NP',
+      'mai': 'hi-IN', // Fallback to Hindi for Maithili
+      'kn': 'kn-IN'
+    };
+    
+    const targetLangCode = langCodeMap[currentLanguage] || 'en-IN';
+    const baseLang = targetLangCode.split('-')[0];
+    
+    // FORCE the language setting - this is critical for non-English
+    utterance.lang = targetLangCode;
+    
+    // Try to find the best voice for the language
+    const voice = getIndianFemaleVoice(currentLanguage);
+    if (voice) {
+      utterance.voice = voice;
+      console.log('🔊 Using voice:', voice.name, 'with lang:', voice.lang);
+    } else {
+      console.log('🔊 No specific voice found, using lang code:', targetLangCode);
+    }
+    
+    // Speech parameters optimized for different languages
+    utterance.rate = currentLanguage === 'en' ? 0.9 : 0.8; // Slower for non-English
     utterance.pitch = 1.1; // Slightly higher for female voice
     utterance.volume = 1.0;
     
     utterance.onstart = () => {
       setSpeakingMessageId(messageId);
       setIsPaused(false);
-      console.log('🔊 Speech started for language:', currentLanguage);
+      console.log('🔊 Speech started for language:', currentLanguage, 'with lang code:', utterance.lang);
     };
     
     utterance.onend = () => {
       setSpeakingMessageId(null);
       setIsPaused(false);
-      console.log('🔊 Speech ended');
+      console.log('🔊 Speech ended successfully');
     };
     
     utterance.onerror = (event) => {
       setSpeakingMessageId(null);
       setIsPaused(false);
-      console.error('🔊 Speech error:', event.error);
+      console.error('🔊 Speech error:', event.error, 'for language:', currentLanguage);
+      
+      // Try fallback to English if non-English fails
+      if (currentLanguage !== 'en') {
+        console.log('🔊 Retrying with English fallback');
+        const fallbackUtterance = new SpeechSynthesisUtterance(cleanText);
+        fallbackUtterance.lang = 'en-IN';
+        fallbackUtterance.rate = 0.9;
+        fallbackUtterance.pitch = 1.1;
+        fallbackUtterance.volume = 1.0;
+        window.speechSynthesis.speak(fallbackUtterance);
+      }
     };
     
     speechSynthesisRef.current = utterance;
     
-    // Small delay to ensure voice is loaded
+    // Ensure voices are loaded and speak
     setTimeout(() => {
+      console.log('🔊 Starting speech synthesis with:', {
+        text: cleanText.substring(0, 50) + '...',
+        lang: utterance.lang,
+        voice: utterance.voice?.name || 'default',
+        rate: utterance.rate,
+        pitch: utterance.pitch
+      });
       window.speechSynthesis.speak(utterance);
-    }, 100);
+    }, 150);
   };
 
   const pauseSpeech = () => {
@@ -399,15 +523,9 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
 
   // Clear chat function
   const handleClearChat = () => {
-    if (window.confirm('Are you sure you want to clear all chat messages?')) {
-      setChatMessages([{
-        id: 1,
-        type: 'bot',
-        text: 'Hello! 👋 I\'m your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources: []
-      }]);
-      setChatContext({ topic: null, intent: null });
+    if (window.confirm('Are you sure you want to start a new chat? Current conversation will be saved.')) {
+      // Force new session
+      setForceNewSession(true);
       
       // Start new chat session
       if (onNewChat) {
@@ -1110,7 +1228,8 @@ Exported on: ${new Date().toLocaleString()}
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    setChatMessages([...chatMessages, userMessage]);
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
     setInputMessage('');
     setIsTyping(true);
 
@@ -1123,13 +1242,20 @@ Exported on: ${new Date().toLocaleString()}
       const language = selectedLanguage || settings?.language || 'en';
       console.log('🌍 Using Language:', language, 'Selected:', selectedLanguage, 'Settings:', settings?.language);
       
+      // Get user's API key from settings
+      const userApiKey = settings?.geminiApiKey?.trim() || null;
+      
       console.log('🚀 Sending message with language:', language);
+      console.log('🔑 Using user API key:', userApiKey ? 'Yes' : 'No (system fallback)');
+      
       const response = await sendMessage(
         inputMessage,
         sessionId,
         processedDocs,
         chatContext,
-        language
+        language,
+        userApiKey,
+        userId
       );
       console.log('🤖 AI Response received:', response.response?.substring(0, 100) + '...');
 
@@ -1142,7 +1268,8 @@ Exported on: ${new Date().toLocaleString()}
         sources: response.sources || []
       };
 
-      setChatMessages(prev => [...prev, botMessage]);
+      const finalMessages = [...chatMessages, userMessage, botMessage];
+      setChatMessages(finalMessages);
       setChatContext(response.context);
 
       // Increment questions answered stat
@@ -1172,7 +1299,8 @@ Exported on: ${new Date().toLocaleString()}
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         sources: []
       };
-      setChatMessages(prev => [...prev, errorMessage]);
+      const errorMessages = [...chatMessages, userMessage, errorMessage];
+      setChatMessages(errorMessages);
     } finally {
       setIsTyping(false);
     }
@@ -1182,10 +1310,20 @@ Exported on: ${new Date().toLocaleString()}
     // Extract title from first user message
     const firstUserMsg = messages.find(m => m.type === 'user');
     if (firstUserMsg) {
-      const title = firstUserMsg.text.substring(0, 50);
-      return title.length < firstUserMsg.text.length ? title + '...' : title;
+      // Clean the text and create a meaningful title
+      let title = firstUserMsg.text
+        .replace(/[\n\r]+/g, ' ') // Replace line breaks with spaces
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim();
+      
+      // Limit to 60 characters for better display
+      if (title.length > 60) {
+        title = title.substring(0, 60).trim() + '...';
+      }
+      
+      return title || 'Untitled Chat';
     }
-    return 'Untitled Chat';
+    return 'New Chat Session';
   };
 
   const renderMessage = (text) => {
@@ -1257,7 +1395,7 @@ Exported on: ${new Date().toLocaleString()}
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] bg-gradient-to-br from-gray-900 to-black rounded-none md:rounded-2xl shadow-2xl overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-60px)] sm:h-[calc(100vh-80px)] md:h-[calc(100vh-100px)] lg:h-[calc(100vh-120px)] bg-gradient-to-br from-gray-900 to-black rounded-none md:rounded-2xl shadow-2xl overflow-hidden max-w-full">
 
       {/* Chat Manager */}
       {showChatManager && (
@@ -1276,6 +1414,7 @@ Exported on: ${new Date().toLocaleString()}
             {/* New Chat Button */}
             <button
               onClick={() => {
+                setForceNewSession(true);
                 onNewChat();
                 setShowChatManager(false);
               }}
@@ -1539,7 +1678,7 @@ Exported on: ${new Date().toLocaleString()}
       )}
 
       {/* Messages Container */}
-      <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto space-y-3 sm:space-y-4 md:space-y-6">
+      <div className="flex-1 p-2 sm:p-4 md:p-6 overflow-y-auto space-y-2 sm:space-y-4 md:space-y-6 min-h-0">
         {isLoadingChat && (
           <div className="flex items-center justify-center py-12">
             <div className="flex items-center gap-3">
@@ -1657,8 +1796,8 @@ Exported on: ${new Date().toLocaleString()}
       </div>
 
       {/* Input Area - Mobile Optimized */}
-      <div className="p-2 sm:p-3 md:p-5 bg-white/5 border-t border-white/10">
-        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
+      <div className="p-2 sm:p-3 md:p-4 lg:p-5 bg-white/5 border-t border-white/10 flex-shrink-0">
+        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 lg:space-x-4">
           <input
             type="text"
             value={inputMessage}
@@ -1666,13 +1805,13 @@ Exported on: ${new Date().toLocaleString()}
             onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isListening && handleSendMessage()}
             disabled={isTyping || isListening}
             placeholder={isListening ? "Listening... 🎤" : "Ask anything... 🚀"}
-            className="flex-1 bg-gray-800 border-2 border-gray-700 rounded-xl sm:rounded-2xl px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 text-sm sm:text-base md:text-lg font-medium text-white focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 disabled:opacity-50 touch-manipulation"
+            className="flex-1 bg-gray-800 border-2 border-gray-700 rounded-lg sm:rounded-xl px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-2.5 md:py-3 lg:py-4 text-sm sm:text-base md:text-lg font-medium text-white focus:outline-none focus:ring-2 sm:focus:ring-4 focus:ring-purple-500/50 focus:border-purple-500 transition-all duration-300 disabled:opacity-50 touch-manipulation min-w-0"
           />
           {voiceSupported && (
             <button
               onClick={isListening ? stopVoiceInput : startVoiceInput}
               disabled={isTyping}
-              className={`p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl shadow-lg active:scale-95 sm:hover:scale-110 transition-all duration-300 disabled:opacity-50 touch-manipulation ${
+              className={`p-2.5 sm:p-3 md:p-4 lg:p-5 rounded-xl sm:rounded-2xl shadow-lg active:scale-95 sm:hover:scale-110 transition-all duration-300 disabled:opacity-50 touch-manipulation flex-shrink-0 ${
                 isListening 
                   ? 'bg-gradient-to-br from-red-600 to-red-500 animate-pulse' 
                   : 'bg-gradient-to-br from-blue-600 to-cyan-500'
@@ -1685,7 +1824,7 @@ Exported on: ${new Date().toLocaleString()}
           <button
             onClick={handleSendMessage}
             disabled={isTyping || isListening}
-            className="p-3 sm:p-4 md:p-5 rounded-xl sm:rounded-2xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg active:scale-95 sm:hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:saturate-50 touch-manipulation"
+            className="p-2 sm:p-3 md:p-4 lg:p-5 rounded-lg sm:rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-lg active:scale-95 sm:hover:scale-110 transition-all duration-300 disabled:opacity-50 disabled:saturate-50 touch-manipulation flex-shrink-0"
           >
             {isTyping ? <Loader className="animate-spin w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" /> : <Send className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />}
           </button>
@@ -1719,8 +1858,8 @@ Exported on: ${new Date().toLocaleString()}
         )}
         
 
-        <div className="flex justify-between items-center mt-2 sm:mt-3 px-1 sm:px-2">
-          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 sm:mt-3 px-1 sm:px-2 gap-2 sm:gap-0">
+          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto scrollbar-hide w-full sm:w-auto">
             {/* Search Button */}
             <button 
               onClick={() => setSearchVisible(!searchVisible)}
@@ -1810,8 +1949,8 @@ Exported on: ${new Date().toLocaleString()}
               <span className="hidden sm:inline">Chats</span>
             </button>
             
-            {/* Language Selector */}
-            <div className="relative inline-block">
+            {/* Language Selector - Mobile Optimized */}
+            <div className="relative inline-block flex-shrink-0">
               <select
                 value={selectedLanguage}
                 onChange={async (e) => {
@@ -1842,7 +1981,7 @@ Exported on: ${new Date().toLocaleString()}
                     // Don't show error to user since language switching still works
                   }
                 }}
-                className="appearance-none bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 pr-6 sm:pr-7 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 active:scale-95 transition-all whitespace-nowrap touch-manipulation"
+                className="appearance-none bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[9px] sm:text-xs font-bold px-1.5 sm:px-3 py-1 pr-5 sm:pr-7 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 active:scale-95 transition-all whitespace-nowrap touch-manipulation min-w-[60px] sm:min-w-[80px]"
                 style={{ colorScheme: 'dark' }}
                 title="Select AI Language"
               >
@@ -1852,13 +1991,13 @@ Exported on: ${new Date().toLocaleString()}
                   </option>
                 ))}
               </select>
-              <Globe className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-white pointer-events-none" />
+              <Globe className="absolute right-1 sm:right-2 top-1/2 transform -translate-y-1/2 w-2.5 h-2.5 sm:w-3 sm:h-3 text-white pointer-events-none" />
             </div>
 
             
 
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-hide w-full sm:w-auto">
             {/* Share Chat Button */}
             <button
               onClick={shareChat}
@@ -1909,7 +2048,7 @@ Exported on: ${new Date().toLocaleString()}
             </button>
             
             {/* Docs Count */}
-            <div className="text-[10px] sm:text-xs text-gray-400 whitespace-nowrap">
+            <div className="text-[9px] sm:text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
               {uploadedDocs.filter(d => d.status === 'processed').length} docs
             </div>
           </div>

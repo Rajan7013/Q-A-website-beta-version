@@ -21,8 +21,9 @@ export function getDocumentsStore() {
 
 router.post('/message', async (req, res) => {
   try {
-    const { message, sessionId, documents, context, language = 'en' } = req.body;
+    const { message, sessionId, documents, context, language = 'en', userApiKey } = req.body;
     console.log('🌍 Backend received language:', language);
+    console.log('🔑 Using user API key:', userApiKey ? 'Yes' : 'No (fallback to system key)');
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
@@ -41,12 +42,16 @@ router.post('/message', async (req, res) => {
       conversationContext.documents = documents;
     }
 
-    // Build prompt with context and document content
+    // Build prompt with context and document content (filter by user)
     const documentIds = documents?.map(d => d.id) || [];
-    const prompt = buildPrompt(message, conversationContext, documentIds, language);
+    const userDocuments = documentsStore.filter(doc => 
+      documentIds.includes(doc.id) && 
+      (!req.body.userId || doc.userId === req.body.userId)
+    );
+    const prompt = buildPrompt(message, conversationContext, documentIds, language, userDocuments);
 
-    // Generate response from Gemini
-    const aiResponse = await generateResponse(prompt, conversationContext.history);
+    // Generate response from Gemini (use user's API key if provided)
+    const aiResponse = await generateResponse(prompt, conversationContext.history, userApiKey);
 
     // Update conversation history
     conversationContext.history.push(
@@ -92,7 +97,41 @@ router.post('/clear', (req, res) => {
   res.json({ message: 'Context cleared' });
 });
 
-function buildPrompt(message, context, documentIds = [], language = 'en') {
+// Validate Gemini API Key
+router.post('/validate-key', async (req, res) => {
+  try {
+    const { apiKey } = req.body;
+    
+    if (!apiKey || !apiKey.trim()) {
+      return res.status(400).json({ error: 'API key is required' });
+    }
+    
+    // Test the API key with a simple request
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey.trim());
+    
+    try {
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const result = await model.generateContent("Hello, this is a test. Please respond with 'API key is working'.");
+      const response = await result.response;
+      const text = response.text();
+      
+      if (text && text.length > 0) {
+        res.json({ valid: true, message: 'API key is valid and working' });
+      } else {
+        res.json({ valid: false, message: 'API key validation failed' });
+      }
+    } catch (apiError) {
+      console.error('Gemini API validation error:', apiError.message);
+      res.json({ valid: false, message: 'Invalid API key or API error' });
+    }
+  } catch (error) {
+    console.error('Key validation error:', error);
+    res.status(500).json({ error: 'Failed to validate API key' });
+  }
+});
+
+function buildPrompt(message, context, documentIds = [], language = 'en', userDocuments = null) {
   // Language name mapping
   const languageNames = {
     'en': 'English',
@@ -110,9 +149,9 @@ function buildPrompt(message, context, documentIds = [], language = 'en') {
   let hasDocuments = false;
   let availableDocs = [];
 
-  // Add document context with actual content
+  // Add document context with actual content (use filtered user documents if provided)
   if (documentIds && documentIds.length > 0) {
-    availableDocs = documentIds
+    availableDocs = userDocuments || documentIds
       .map(docId => documentsStore.find(d => d.id === docId))
       .filter(doc => doc && doc.textContent);
     

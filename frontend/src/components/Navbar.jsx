@@ -12,52 +12,52 @@ const Navbar = ({ currentPage, setCurrentPage, userProfile }) => {
   return (
     <>
       {/* Desktop & Tablet Navbar */}
-      <nav className="hidden md:block bg-gradient-to-r from-purple-900 via-pink-800 to-orange-700 p-4 md:p-6 rounded-none md:rounded-2xl mb-0 md:mb-8 shadow-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 lg:gap-8 flex-wrap">
+      <nav className="hidden md:block bg-gradient-to-r from-purple-900 via-pink-800 to-orange-700 p-3 md:p-4 lg:p-6 rounded-none md:rounded-2xl mb-0 md:mb-6 shadow-2xl">
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-3 md:gap-4 lg:gap-6 flex-wrap justify-center">
             <div 
-              className="flex items-center space-x-2 md:space-x-4 cursor-pointer transform hover:scale-105 transition-all duration-300" 
+              className="flex items-center space-x-2 md:space-x-3 cursor-pointer transform hover:scale-105 transition-all duration-300" 
               onClick={() => setCurrentPage('home')}
             >
-              <div className="p-2 md:p-3 bg-white/20 backdrop-blur-sm rounded-xl md:rounded-2xl">
-                <Brain className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              <div className="p-2 md:p-2.5 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Brain className="w-5 h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg md:text-2xl font-black text-white">AI Doc Analyzer</h1>
-                <p className="text-[10px] md:text-xs text-white/80 font-bold">Smart • Contextual</p>
+              <div className="hidden sm:block">
+                <h1 className="text-base md:text-lg lg:text-xl font-black text-white">AI Doc Analyzer</h1>
+                <p className="text-[9px] md:text-[10px] text-white/80 font-bold">Smart • Contextual</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2 lg:gap-3">
               {navItems.map((item) => (
                 <button
                   key={item.page}
                   onClick={() => setCurrentPage(item.page)}
-                  className={`flex items-center space-x-1 md:space-x-2 px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl font-bold transition-all duration-300 transform hover:scale-105 md:hover:scale-110 text-sm md:text-base ${
+                  className={`flex items-center space-x-1 md:space-x-1.5 px-2.5 md:px-3 lg:px-4 py-2 md:py-2.5 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 text-xs md:text-sm lg:text-base ${
                     currentPage === item.page 
                       ? 'bg-white text-purple-600 shadow-xl' 
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
-                  <item.icon className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="hidden lg:inline">{item.label}</span>
+                  <item.icon className="w-4 h-4 md:w-4 md:h-4 lg:w-5 lg:h-5" />
+                  <span className="hidden md:inline lg:inline">{item.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex items-center gap-2 md:gap-3">
+            <div className="flex items-center gap-1.5 md:gap-2">
               <button 
                 onClick={() => setCurrentPage('settings')}
-                className="bg-white/20 hover:bg-white/30 text-white p-2 md:p-3 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-110"
+                className="bg-white/20 hover:bg-white/30 text-white p-2 md:p-2.5 rounded-lg transition-all duration-300 transform hover:scale-110"
               >
-                <Settings className="w-5 h-5 md:w-6 md:h-6" />
+                <Settings className="w-4 h-4 md:w-5 md:h-5" />
               </button>
               <button 
                 onClick={() => setCurrentPage('profile')}
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-3 md:px-5 py-2 md:py-3 rounded-lg md:rounded-xl font-bold transition-all duration-300 transform hover:scale-110 shadow-xl flex items-center space-x-1 md:space-x-2 text-sm md:text-base"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-2.5 md:px-3 lg:px-4 py-2 md:py-2.5 rounded-lg font-bold transition-all duration-300 transform hover:scale-110 shadow-xl flex items-center space-x-1 text-xs md:text-sm lg:text-base"
               >
-                <span>{userProfile?.avatar || '👤'}</span>
-                <span className="hidden md:inline">{userProfile?.name?.split(' ')[0] || 'User'}</span>
+                <span className="text-sm md:text-base">{userProfile?.avatar || '👤'}</span>
+                <span className="hidden lg:inline">{userProfile?.name?.split(' ')[0] || 'User'}</span>
               </button>
             </div>
           </div>
@@ -66,50 +66,50 @@ const Navbar = ({ currentPage, setCurrentPage, userProfile }) => {
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-purple-900 via-pink-800 to-orange-700 border-t border-white/10 z-50 safe-area-bottom">
-        <div className="flex items-center justify-around py-2">
+        <div className="flex items-center justify-around py-1.5 px-1">
           {navItems.map((item) => (
             <button
               key={item.page}
               onClick={() => setCurrentPage(item.page)}
-              className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 min-w-[60px] touch-manipulation ${
+              className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all duration-300 min-w-[50px] max-w-[70px] touch-manipulation ${
                 currentPage === item.page 
                   ? 'bg-white/20 text-white' 
                   : 'text-white/70 active:bg-white/10'
               }`}
             >
-              <item.icon className={`w-6 h-6 mb-1 ${
+              <item.icon className={`w-5 h-5 mb-0.5 ${
                 currentPage === item.page ? 'text-white' : 'text-white/70'
               }`} />
-              <span className={`text-[10px] font-medium ${
+              <span className={`text-[9px] font-medium leading-tight ${
                 currentPage === item.page ? 'text-white' : 'text-white/70'
               }`}>{item.label}</span>
             </button>
           ))}
           <button 
             onClick={() => setCurrentPage('settings')}
-            className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 min-w-[60px] touch-manipulation ${
+            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all duration-300 min-w-[50px] max-w-[70px] touch-manipulation ${
               currentPage === 'settings'
                 ? 'bg-white/20 text-white' 
                 : 'text-white/70 active:bg-white/10'
             }`}
           >
-            <Settings className={`w-6 h-6 mb-1 ${
+            <Settings className={`w-5 h-5 mb-0.5 ${
               currentPage === 'settings' ? 'text-white' : 'text-white/70'
             }`} />
-            <span className={`text-[10px] font-medium ${
+            <span className={`text-[9px] font-medium leading-tight ${
               currentPage === 'settings' ? 'text-white' : 'text-white/70'
             }`}>Settings</span>
           </button>
           <button 
             onClick={() => setCurrentPage('profile')}
-            className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all duration-300 min-w-[60px] touch-manipulation ${
+            className={`flex flex-col items-center justify-center p-1.5 rounded-lg transition-all duration-300 min-w-[50px] max-w-[70px] touch-manipulation ${
               currentPage === 'profile'
                 ? 'bg-white/20 text-white' 
                 : 'text-white/70 active:bg-white/10'
             }`}
           >
-            <span className="text-2xl mb-1">{userProfile?.avatar || '👤'}</span>
-            <span className={`text-[10px] font-medium ${
+            <span className="text-xl mb-0.5">{userProfile?.avatar || '👤'}</span>
+            <span className={`text-[9px] font-medium leading-tight ${
               currentPage === 'profile' ? 'text-white' : 'text-white/70'
             }`}>Profile</span>
           </button>

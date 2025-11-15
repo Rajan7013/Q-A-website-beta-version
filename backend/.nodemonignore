@@ -1,0 +1,5 @@
+chat-histories.json
+chat-messages.json
+uploads/
+*.log
+*.tmp

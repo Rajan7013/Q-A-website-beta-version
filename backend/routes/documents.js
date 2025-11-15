@@ -7,6 +7,7 @@ import mammoth from 'mammoth';
 import unzipper from 'unzipper';
 import xml2js from 'xml2js';
 import { setDocumentsStore } from './chat.js';
+import { uploadToR2, deleteFromR2 } from '../utils/r2Storage.js';
 
 const router = express.Router();
 const DOCUMENTS_FILE = './documents.json';
@@ -75,9 +76,14 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
+    
+    // Get user ID from request (should be sent from frontend)
+    const userId = req.body.userId || 'anonymous';
+    console.log('📁 Document upload for user:', userId.substring(0, 20) + '...');
 
     const fileInfo = {
       id: Date.now(),
+      userId: userId, // Associate document with user
       name: req.file.originalname,
       size: formatFileSize(req.file.size),
       path: req.file.path,
@@ -86,12 +92,25 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       type: path.extname(req.file.originalname).toLowerCase()
     };
 
-    // Process file and extract text
+    // Process file and extract text (SAME - for AI)
     const extractedText = await extractTextFromFile(req.file.path, fileInfo.type);
-    fileInfo.pages = Math.ceil(extractedText.length / 3000); // Estimate pages
-    fileInfo.status = 'processed';
-    fileInfo.textContent = extractedText;
+    fileInfo.pages = Math.ceil(extractedText.length / 3000);
+    fileInfo.textContent = extractedText; // KEEPS AI WORKING 100%
 
+    // Upload to R2 (NEW)
+    const r2Result = await uploadToR2(req.file.path, req.file.originalname);
+    
+    if (r2Result.success) {
+      fileInfo.r2Url = r2Result.publicUrl;
+      fileInfo.r2FileName = r2Result.fileName;
+      fileInfo.storageType = 'r2';
+      console.log('✅ Document stored in R2:', r2Result.publicUrl);
+    } else {
+      fileInfo.storageType = 'local';
+      console.log('⚠️ R2 failed, using local storage');
+    }
+
+    fileInfo.status = 'processed';
     documents.push(fileInfo);
     
     // Save to file and update chat store
@@ -112,21 +131,30 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Get all documents
+// Get all documents for a specific user
 router.get('/list', async (req, res) => {
   try {
-    // Return documents with proper metadata (excluding textContent to save bandwidth)
-    const docsWithMetadata = documents.map(doc => ({
+    const userId = req.query.userId || 'anonymous';
+    console.log('📂 Fetching documents for user:', userId.substring(0, 20) + '...');
+    
+    // Filter documents by user ID
+    const userDocuments = documents.filter(doc => doc.userId === userId);
+    
+    // Return user's documents with proper metadata (excluding textContent to save bandwidth)
+    const docsWithMetadata = userDocuments.map(doc => ({
       id: doc.id,
       name: doc.name,
       size: doc.size,
       pages: doc.pages,
       uploaded: doc.uploaded,
       status: doc.status,
-      type: doc.type
+      type: doc.type,
+      r2Url: doc.r2Url, // NEW - for frontend viewing
+      storageType: doc.storageType // NEW - shows where stored
       // textContent is kept on backend only, not sent to frontend
     }));
     
+    console.log(`📁 Returning ${docsWithMetadata.length} documents for user`);
     res.json({
       documents: docsWithMetadata
     });
@@ -139,6 +167,13 @@ router.get('/list', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const docToDelete = documents.find(doc => doc.id.toString() === id);
+    
+    // Delete from R2 if stored there
+    if (docToDelete && docToDelete.r2FileName) {
+      await deleteFromR2(docToDelete.r2FileName);
+    }
+    
     documents = documents.filter(doc => doc.id.toString() !== id);
     
     // Save to file and update chat store

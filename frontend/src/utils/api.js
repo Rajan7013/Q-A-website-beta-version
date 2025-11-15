@@ -11,14 +11,16 @@ const api = axios.create({
 });
 
 // Chat API
-export const sendMessage = async (message, sessionId, documents = [], context = null, language = 'en') => {
+export const sendMessage = async (message, sessionId, documents = [], context = null, language = 'en', userApiKey = null, userId = null) => {
   try {
     const response = await api.post('/chat/message', {
       message,
       sessionId,
       documents,
       context,
-      language
+      language,
+      userApiKey,
+      userId
     });
     return response.data;
   } catch (error) {
@@ -38,10 +40,13 @@ export const clearChat = async (sessionId) => {
 };
 
 // Document API
-export const uploadDocument = async (file, onProgress) => {
+export const uploadDocument = async (file, onProgress, userId) => {
   try {
     const formData = new FormData();
     formData.append('file', file);
+    if (userId) {
+      formData.append('userId', userId);
+    }
 
     const response = await api.post('/documents/upload', formData, {
       headers: {
@@ -63,9 +68,10 @@ export const uploadDocument = async (file, onProgress) => {
   }
 };
 
-export const getDocuments = async () => {
+export const getDocuments = async (userId) => {
   try {
-    const response = await api.get('/documents/list');
+    const url = userId ? `/documents/list?userId=${encodeURIComponent(userId)}` : '/documents/list';
+    const response = await api.get(url);
     return response.data.documents || [];
   } catch (error) {
     console.error('Get documents error:', error);
@@ -238,6 +244,17 @@ export const renameChatSession = async (userId, sessionId, title) => {
     return response.data;
   } catch (error) {
     console.error('Rename chat session error:', error);
+    throw error;
+  }
+};
+
+// Validate Gemini API Key
+export const validateGeminiKey = async (apiKey) => {
+  try {
+    const response = await api.post('/chat/validate-key', { apiKey });
+    return response.data;
+  } catch (error) {
+    console.error('Validate Gemini key error:', error);
     throw error;
   }
 };

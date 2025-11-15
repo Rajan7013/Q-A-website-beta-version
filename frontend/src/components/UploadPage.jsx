@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Upload, FileText, File, FileCheck, FilePlus } from 'lucide-react';
 import { uploadDocument } from '../utils/api';
 
-const UploadPage = ({ onDocumentUpload }) => {
+const UploadPage = ({ onDocumentUpload, userId }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -16,7 +16,7 @@ const UploadPage = ({ onDocumentUpload }) => {
     try {
       const result = await uploadDocument(file, (progress) => {
         setUploadProgress(progress);
-      });
+      }, userId);
 
       onDocumentUpload(result.document);
       alert('Document uploaded successfully!');
