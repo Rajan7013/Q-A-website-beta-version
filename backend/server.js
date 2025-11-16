@@ -6,6 +6,9 @@ import documentRoutes from './routes/documents.js';
 import profileRoutes from './routes/profile.js';
 import statsRoutes from './routes/stats.js';
 import historyRoutes from './routes/history.js';
+import { sanitizeInput, validateApiKey } from './middleware/security.js';
+import { rateLimiter } from './middleware/rateLimiter.js';
+import { secureLog } from './utils/logger.js';
 
 dotenv.config();
 
@@ -23,13 +26,20 @@ console.warn = function(...args) {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Security middleware
+app.use(rateLimiter);
+app.use(sanitizeInput);
+
 // Middleware
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// API key validation for chat routes
+app.use('/api/chat', validateApiKey);
 
 // Routes
 app.use('/api/chat', chatRoutes);
@@ -53,7 +63,8 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
-  console.log(`🤖 Gemini API: ${process.env.GEMINI_API_KEY ? 'Configured ✓' : 'Missing ✗'}`);
+  secureLog.info(`Server running on port ${PORT}`);
+  secureLog.info(`CORS enabled for: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}`);
+  secureLog.info(`Gemini API: ${process.env.GEMINI_API_KEY ? 'Configured' : 'Missing'}`);
+  secureLog.info('Security middleware enabled');
 });

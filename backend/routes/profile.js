@@ -45,7 +45,8 @@ router.get('/:userId/settings', (req, res) => {
     const settings = userSettings.get(userId) || {
       language: 'en',
       notifications: true,
-      autoSave: true
+      autoSave: true,
+      geminiApiKey: ''
     };
     res.json({ settings });
   } catch (error) {

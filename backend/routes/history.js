@@ -43,20 +43,23 @@ const loadChatData = async () => {
 
 // Save data to files with debouncing
 let saveTimeout = null;
+let isSaving = false;
 const saveChatData = async (immediate = false) => {
-  if (!immediate && saveTimeout) {
-    return; // Already scheduled
+  if (isSaving && !immediate) {
+    return; // Already saving
   }
   
   if (!immediate) {
-    // Debounce saves - wait 2 seconds before saving
+    // Debounce saves - wait 3 seconds before saving
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
       saveChatData(true);
-      saveTimeout = null;
-    }, 2000);
+    }, 3000);
     return;
   }
+  
+  if (isSaving) return; // Prevent concurrent saves
+  isSaving = true;
   
   try {
     // Save chat histories
@@ -67,9 +70,14 @@ const saveChatData = async (immediate = false) => {
     const messagesObj = Object.fromEntries(chatMessages);
     await fs.writeFile(CHAT_MESSAGES_FILE, JSON.stringify(messagesObj, null, 2));
     
-    console.log('💾 Chat data saved');
+    // Only log once per save cycle
+    if (Math.random() < 0.2) {
+      console.log('💾 Data saved');
+    }
   } catch (error) {
-    console.error('Failed to save chat data:', error);
+    console.error('Save error:', error);
+  } finally {
+    isSaving = false;
   }
 };
 

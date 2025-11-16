@@ -13,8 +13,16 @@ const api = axios.create({
 // Chat API
 export const sendMessage = async (message, sessionId, documents = [], context = null, language = 'en', userApiKey = null, userId = null) => {
   try {
+    // Input validation
+    if (!message || typeof message !== 'string') {
+      throw new Error('Invalid message format');
+    }
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new Error('Invalid session ID');
+    }
+    
     const response = await api.post('/chat/message', {
-      message,
+      message: message.trim(),
       sessionId,
       documents,
       context,
@@ -24,7 +32,7 @@ export const sendMessage = async (message, sessionId, documents = [], context = 
     });
     return response.data;
   } catch (error) {
-    console.error('Send message error:', error);
+    console.error('Send message error:', error.message);
     throw error;
   }
 };
@@ -251,10 +259,15 @@ export const renameChatSession = async (userId, sessionId, title) => {
 // Validate Gemini API Key
 export const validateGeminiKey = async (apiKey) => {
   try {
-    const response = await api.post('/chat/validate-key', { apiKey });
+    // Input validation
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.length < 10) {
+      throw new Error('Invalid API key format');
+    }
+    
+    const response = await api.post('/chat/validate-key', { apiKey: apiKey.trim() });
     return response.data;
   } catch (error) {
-    console.error('Validate Gemini key error:', error);
+    console.error('Validate Gemini key error:', error.message);
     throw error;
   }
 };

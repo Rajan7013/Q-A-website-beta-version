@@ -649,5 +649,420 @@
       "time": "01:03 AM",
       "sources": []
     }
+  ],
+  "session-1763304994179-lw4g5z": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "08:26 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": "hi sir",
+      "time": "08:26 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "Hello! How can I assist you today?",
+      "rawText": "Hello! How can I assist you today?",
+      "time": "08:26 PM",
+      "sources": []
+    },
+    {
+      "id": 4,
+      "type": "user",
+      "text": "tell me software artictecture , types , simple explain , with example in hierrachial order ",
+      "time": "08:27 PM"
+    },
+    {
+      "id": 5,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nSoftware architecture refers to the fundamental structures of a software system and the discipline of creating such structures. It's the blueprint for the system, defining how components interact, how data flows, and how the system as a whole behaves. It addresses concerns like performance, scalability, security, and maintainability.\n\n### Simple Explanation of Software Architecture\n\nImagine you're building a house. Before you start laying bricks, you need an architectural plan. This plan shows where the rooms are, how the plumbing and electrical systems connect, and what materials will be used. Software architecture is similar: it's the high-level design that dictates the overall structure of a software system, ensuring all parts work together effectively to meet requirements.\n\n### Types of Software Architecture (Hierarchical Order by Commonality/Scope)\n\nThere isn't a strict universal hierarchical order for all architectural patterns, as they often address different concerns or scopes. However, we can categorize them and present common ones.\n\nHere are some common types of software architecture, explained simply with examples:\n\n#### 1. Foundational/Conceptual Patterns (High-Level Structure)\n\nThese patterns define the very broad, fundamental structure of how a system is organized.\n\n*   **Layered Architecture (N-tier Architecture)**\n    *   **Explanation:** This is one of the most common patterns, where components are organized into horizontal layers, each with a specific role. Each layer only interacts with the layers immediately above and below it.\n    *   **Example:**\n        *   **Presentation Layer (UI):** What the user sees and interacts with (e.g., a web browser displaying a page).\n        *   **Application Layer (Business Logic):** Handles specific tasks and processes user requests (e.g., checking if a user is logged in, processing an order).\n        *   **Domain Layer:** Contains core business rules and data models.\n        *   **Data Access Layer:** Communicates with the database (e.g., retrieving user data, saving new orders).\n        *   **Database Layer:** Stores the actual data (e.g., SQL database).\n    *   **Hierarchical Order:** Presentation -> Application -> Domain -> Data Access -> Database\n\n*   **Client-Server Architecture**\n    *   **Explanation:** A fundamental network architecture where clients (e.g., web browsers, mobile apps) request services from a central server.\n    *   **Example:**\n        *   **Client:** Your web browser sends a request to load a webpage.\n        *   **Server:** A web server receives the request, processes it, and sends the webpage content back to your browser.\n    *   **Hierarchical Order:** Client <-> Server\n\n#### 2. Structural/Decomposition Patterns (How Components are Organized)\n\nThese patterns focus on how the system is broken down into smaller, manageable pieces and how those pieces interact.\n\n*   **Monolithic Architecture**\n    *   **Explanation:** All components of an application (user interface, business logic, data access) are combined into a single, indivisible unit or program.\n    *   **Example:** A traditional single Java WAR file deployed on a server, containing all features of an e-commerce website.\n    *   **Hierarchical Order:** Single Application Block -> Internal Modules/Classes\n\n*   **Microservices Architecture**\n    *   **Explanation:** An application is built as a collection of small, independent services, each running in its own process and communicating via lightweight mechanisms (like APIs). Each service focuses on a single business capability.\n    *   **Example:** An e-commerce website where \"User Management,\" \"Product Catalog,\" \"Order Processing,\" and \"Payment Gateway\" are separate, independently deployable services that communicate with each other.\n    *   **Hierarchical Order:** API Gateway -> Individual Microservices -> Databases for each service\n\n*   **Event-Driven Architecture**\n    *   **Explanation:** Components communicate by producing and consuming events. Services don't directly call each other but react to events that occur in the system.\n    *   **Example:** In an order processing system, when an \"Order Placed\" event occurs, separate services might react: one to \"Process Payment,\" another to \"Update Inventory,\" and another to \"Send Confirmation Email.\"\n    *   **Hierarchical Order:** Event Source -> Event Channel/Broker -> Event Consumers\n\n#### 3. Data Flow Patterns\n\nThese patterns describe how data moves through the system.\n\n*   **Pipeline Architecture (Filter-Pipe Architecture)**\n    *   **Explanation:** Data is processed in a sequential flow through a series of independent processing steps (filters), where the output of one step becomes the input of the next (pipes).\n    *   **Example:** Data transformation in an ETL (Extract, Transform, Load) system:\n        *   **Extract Filter:** Reads raw data from a source.\n        *   **Cleanse Filter:** Removes errors and inconsistencies.\n        *   **Transform Filter:** Converts data into a desired format.\n        *   **Load Filter:** Writes the processed data to a target database.\n    *   **Hierarchical Order:** Input -> Filter 1 (Pipe) -> Filter 2 (Pipe) -> ... -> Output\n\n#### 4. Specialized/Domain-Specific Patterns\n\nThese are often used for specific types of applications or problems.\n\n*   **Broker Architecture**\n    *   **Explanation:** Decouples clients and servers by introducing a broker component that handles communication between them. Clients send requests to the broker, and the broker forwards them to the appropriate server.\n    *   **Example:** Message queue systems (like Apache Kafka or RabbitMQ) where producers send messages to a broker, and consumers retrieve them, without direct knowledge of each other.\n    *   **Hierarchical Order:** Client <-> Broker <-> Server\n\n*   **Peer-to-Peer (P2P) Architecture**\n    *   **Explanation:** All participants (peers) in the system are equal and can act as both clients and servers, sharing resources and communicating directly with each other.\n    *   **Example:** File-sharing networks like BitTorrent, or some blockchain networks where each node is a peer.\n    *   **Hierarchical Order:** Peer <-> Peer <-> Peer... (no central hierarchy)\n\nThis categorization helps in understanding the different levels and aspects of how software systems can be structured.",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nSoftware architecture refers to the fundamental structures of a software system and the discipline of creating such structures. It's the blueprint for the system, defining how components interact, how data flows, and how the system as a whole behaves. It addresses concerns like performance, scalability, security, and maintainability.\n\n### Simple Explanation of Software Architecture\n\nImagine you're building a house. Before you start laying bricks, you need an architectural plan. This plan shows where the rooms are, how the plumbing and electrical systems connect, and what materials will be used. Software architecture is similar: it's the high-level design that dictates the overall structure of a software system, ensuring all parts work together effectively to meet requirements.\n\n### Types of Software Architecture (Hierarchical Order by Commonality/Scope)\n\nThere isn't a strict universal hierarchical order for all architectural patterns, as they often address different concerns or scopes. However, we can categorize them and present common ones.\n\nHere are some common types of software architecture, explained simply with examples:\n\n#### 1. Foundational/Conceptual Patterns (High-Level Structure)\n\nThese patterns define the very broad, fundamental structure of how a system is organized.\n\n*   **Layered Architecture (N-tier Architecture)**\n    *   **Explanation:** This is one of the most common patterns, where components are organized into horizontal layers, each with a specific role. Each layer only interacts with the layers immediately above and below it.\n    *   **Example:**\n        *   **Presentation Layer (UI):** What the user sees and interacts with (e.g., a web browser displaying a page).\n        *   **Application Layer (Business Logic):** Handles specific tasks and processes user requests (e.g., checking if a user is logged in, processing an order).\n        *   **Domain Layer:** Contains core business rules and data models.\n        *   **Data Access Layer:** Communicates with the database (e.g., retrieving user data, saving new orders).\n        *   **Database Layer:** Stores the actual data (e.g., SQL database).\n    *   **Hierarchical Order:** Presentation -> Application -> Domain -> Data Access -> Database\n\n*   **Client-Server Architecture**\n    *   **Explanation:** A fundamental network architecture where clients (e.g., web browsers, mobile apps) request services from a central server.\n    *   **Example:**\n        *   **Client:** Your web browser sends a request to load a webpage.\n        *   **Server:** A web server receives the request, processes it, and sends the webpage content back to your browser.\n    *   **Hierarchical Order:** Client <-> Server\n\n#### 2. Structural/Decomposition Patterns (How Components are Organized)\n\nThese patterns focus on how the system is broken down into smaller, manageable pieces and how those pieces interact.\n\n*   **Monolithic Architecture**\n    *   **Explanation:** All components of an application (user interface, business logic, data access) are combined into a single, indivisible unit or program.\n    *   **Example:** A traditional single Java WAR file deployed on a server, containing all features of an e-commerce website.\n    *   **Hierarchical Order:** Single Application Block -> Internal Modules/Classes\n\n*   **Microservices Architecture**\n    *   **Explanation:** An application is built as a collection of small, independent services, each running in its own process and communicating via lightweight mechanisms (like APIs). Each service focuses on a single business capability.\n    *   **Example:** An e-commerce website where \"User Management,\" \"Product Catalog,\" \"Order Processing,\" and \"Payment Gateway\" are separate, independently deployable services that communicate with each other.\n    *   **Hierarchical Order:** API Gateway -> Individual Microservices -> Databases for each service\n\n*   **Event-Driven Architecture**\n    *   **Explanation:** Components communicate by producing and consuming events. Services don't directly call each other but react to events that occur in the system.\n    *   **Example:** In an order processing system, when an \"Order Placed\" event occurs, separate services might react: one to \"Process Payment,\" another to \"Update Inventory,\" and another to \"Send Confirmation Email.\"\n    *   **Hierarchical Order:** Event Source -> Event Channel/Broker -> Event Consumers\n\n#### 3. Data Flow Patterns\n\nThese patterns describe how data moves through the system.\n\n*   **Pipeline Architecture (Filter-Pipe Architecture)**\n    *   **Explanation:** Data is processed in a sequential flow through a series of independent processing steps (filters), where the output of one step becomes the input of the next (pipes).\n    *   **Example:** Data transformation in an ETL (Extract, Transform, Load) system:\n        *   **Extract Filter:** Reads raw data from a source.\n        *   **Cleanse Filter:** Removes errors and inconsistencies.\n        *   **Transform Filter:** Converts data into a desired format.\n        *   **Load Filter:** Writes the processed data to a target database.\n    *   **Hierarchical Order:** Input -> Filter 1 (Pipe) -> Filter 2 (Pipe) -> ... -> Output\n\n#### 4. Specialized/Domain-Specific Patterns\n\nThese are often used for specific types of applications or problems.\n\n*   **Broker Architecture**\n    *   **Explanation:** Decouples clients and servers by introducing a broker component that handles communication between them. Clients send requests to the broker, and the broker forwards them to the appropriate server.\n    *   **Example:** Message queue systems (like Apache Kafka or RabbitMQ) where producers send messages to a broker, and consumers retrieve them, without direct knowledge of each other.\n    *   **Hierarchical Order:** Client <-> Broker <-> Server\n\n*   **Peer-to-Peer (P2P) Architecture**\n    *   **Explanation:** All participants (peers) in the system are equal and can act as both clients and servers, sharing resources and communicating directly with each other.\n    *   **Example:** File-sharing networks like BitTorrent, or some blockchain networks where each node is a peer.\n    *   **Hierarchical Order:** Peer <-> Peer <-> Peer... (no central hierarchy)\n\nThis categorization helps in understanding the different levels and aspects of how software systems can be structured.",
+      "time": "08:27 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    }
+  ],
+  "session-1763307518369": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "09:10 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": "hi",
+      "time": "09:10 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge:\n\nHello there!\n\nI'm ready to assist you. Please feel free to ask me anything you'd like. I can help with a wide range of topics, including but not limited to:\n\n*   **Explaining concepts** from science, technology, history, and more.\n*   **Generating creative content** like stories, poems, or code snippets.\n*   **Answering factual questions** about various subjects.\n*   **Providing summaries** of information.\n*   **Offering suggestions** or ideas.\n\nJust let me know how I can be of service!",
+      "rawText": "🧠 Based on general knowledge:\n\nHello there!\n\nI'm ready to assist you. Please feel free to ask me anything you'd like. I can help with a wide range of topics, including but not limited to:\n\n*   **Explaining concepts** from science, technology, history, and more.\n*   **Generating creative content** like stories, poems, or code snippets.\n*   **Answering factual questions** about various subjects.\n*   **Providing summaries** of information.\n*   **Offering suggestions** or ideas.\n\nJust let me know how I can be of service!",
+      "time": "09:10 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "user",
+      "text": "Claude",
+      "time": "09:10 PM"
+    },
+    {
+      "id": 5,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge:\n\n\"Claude\" refers to a family of large language models (LLMs) developed by **Anthropic**, an AI safety and research company. It is designed to be helpful, harmless, and honest.\n\n### What is Claude?\n\nClaude is an artificial intelligence assistant built on a neural network architecture, similar to other advanced AI models like OpenAI's GPT series. It is trained on vast amounts of text and code data, enabling it to understand, generate, and process human language for a wide range of tasks.\n\n### Key Characteristics and Capabilities\n\nClaude models are known for several key features:\n\n*   **Conversational AI:** Excels at engaging in natural, coherent, and extended conversations.\n*   **Context Window:** Often features a large context window, allowing it to process and remember a significant amount of information from previous turns in a conversation or from lengthy documents.\n*   **Reasoning and Logic:** Capable of complex reasoning, problem-solving, and generating logical responses.\n*   **Content Generation:** Can create various forms of text content, including:\n    *   Summaries\n    *   Creative writing (stories, poems)\n    *   Code\n    *   Emails and reports\n    *   Explanations of complex topics\n*   **Safety and Ethics:** Anthropic places a strong emphasis on developing AI systems that are safe, unbiased, and aligned with human values. This is often achieved through a methodology called \"Constitutional AI,\" where the AI is guided by a set of principles or a \"constitution\" to ensure its responses are helpful, harmless, and ethical.\n*   **Instruction Following:** Designed to follow user instructions meticulously and adapt its output accordingly.\n\n### Constitutional AI\n\nA notable aspect of Claude's development is Anthropic's \"Constitutional AI\" approach. Instead of relying solely on human feedback for alignment, this method involves providing the AI with a set of guiding principles (a \"constitution\"). The AI then uses these principles to self-correct and refine its own responses, aiming to produce outputs that are less harmful and more aligned with desired behaviors without extensive human supervision in every step of the training process.\n\n### Different Versions\n\nAnthropic has released several iterations of Claude, each with improved capabilities:\n\n*   **Claude 1:** The initial public release, demonstrating strong conversational abilities and safety features.\n*   **Claude 2:** Offered significant improvements in reasoning, coding, and mathematical abilities, along with a larger context window.\n*   **Claude 3:** A family of models (Haiku, Sonnet, Opus) released in 2024, representing a major leap forward in performance across various benchmarks.\n    *   **Claude 3 Haiku:** The fastest and most compact model, ideal for quick, simple tasks.\n    *   **Claude 3 Sonnet:** A balance of intelligence and speed, suitable for enterprise workloads.\n    *   **Claude 3 Opus:** The most intelligent and powerful model, excelling at highly complex tasks, open-ended prompts, and nuanced content generation.\n\n### Use Cases\n\nClaude models are used in a variety of applications, including:\n\n*   **Customer service chatbots**\n*   **Content creation and summarization tools**\n*   **Coding assistance and debugging**\n*   **Educational tools**\n*   **Research and analysis**\n*   **Internal knowledge management for businesses**\n\nIn essence, Claude is a leading advanced AI model that stands out for its strong emphasis on safety, ethical alignment, and impressive capabilities in natural language understanding and generation.",
+      "rawText": "🧠 Based on general knowledge:\n\n\"Claude\" refers to a family of large language models (LLMs) developed by **Anthropic**, an AI safety and research company. It is designed to be helpful, harmless, and honest.\n\n### What is Claude?\n\nClaude is an artificial intelligence assistant built on a neural network architecture, similar to other advanced AI models like OpenAI's GPT series. It is trained on vast amounts of text and code data, enabling it to understand, generate, and process human language for a wide range of tasks.\n\n### Key Characteristics and Capabilities\n\nClaude models are known for several key features:\n\n*   **Conversational AI:** Excels at engaging in natural, coherent, and extended conversations.\n*   **Context Window:** Often features a large context window, allowing it to process and remember a significant amount of information from previous turns in a conversation or from lengthy documents.\n*   **Reasoning and Logic:** Capable of complex reasoning, problem-solving, and generating logical responses.\n*   **Content Generation:** Can create various forms of text content, including:\n    *   Summaries\n    *   Creative writing (stories, poems)\n    *   Code\n    *   Emails and reports\n    *   Explanations of complex topics\n*   **Safety and Ethics:** Anthropic places a strong emphasis on developing AI systems that are safe, unbiased, and aligned with human values. This is often achieved through a methodology called \"Constitutional AI,\" where the AI is guided by a set of principles or a \"constitution\" to ensure its responses are helpful, harmless, and ethical.\n*   **Instruction Following:** Designed to follow user instructions meticulously and adapt its output accordingly.\n\n### Constitutional AI\n\nA notable aspect of Claude's development is Anthropic's \"Constitutional AI\" approach. Instead of relying solely on human feedback for alignment, this method involves providing the AI with a set of guiding principles (a \"constitution\"). The AI then uses these principles to self-correct and refine its own responses, aiming to produce outputs that are less harmful and more aligned with desired behaviors without extensive human supervision in every step of the training process.\n\n### Different Versions\n\nAnthropic has released several iterations of Claude, each with improved capabilities:\n\n*   **Claude 1:** The initial public release, demonstrating strong conversational abilities and safety features.\n*   **Claude 2:** Offered significant improvements in reasoning, coding, and mathematical abilities, along with a larger context window.\n*   **Claude 3:** A family of models (Haiku, Sonnet, Opus) released in 2024, representing a major leap forward in performance across various benchmarks.\n    *   **Claude 3 Haiku:** The fastest and most compact model, ideal for quick, simple tasks.\n    *   **Claude 3 Sonnet:** A balance of intelligence and speed, suitable for enterprise workloads.\n    *   **Claude 3 Opus:** The most intelligent and powerful model, excelling at highly complex tasks, open-ended prompts, and nuanced content generation.\n\n### Use Cases\n\nClaude models are used in a variety of applications, including:\n\n*   **Customer service chatbots**\n*   **Content creation and summarization tools**\n*   **Coding assistance and debugging**\n*   **Educational tools**\n*   **Research and analysis**\n*   **Internal knowledge management for businesses**\n\nIn essence, Claude is a leading advanced AI model that stands out for its strong emphasis on safety, ethical alignment, and impressive capabilities in natural language understanding and generation.",
+      "time": "09:10 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    }
+  ],
+  "session-1763307725288-lo3jxw": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "09:12 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": " WEEK-1 (SHORT & EASY VERSION)",
+      "time": "09:12 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "📄 Based on your documents: \"Writable Program in Short Form for Copy.pdf\"\n\nThe document provides a \"WEEK-1 (SHORT & EASY VERSION)\" which details a program to check grandparent relationships.\n\n### Short Algorithm (5 Points)\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is parent of Y.\n3.  Create a function to check if X is grandparent of Y using the `parent()` rule.\n4.  Call the grandparent function for given names.\n5.  Print whether the grandparent relation is true or false.\n\n### Simplified Program (Same Output)\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n### Output\n```\nYes, John is the grandparent of Susan.\n```",
+      "rawText": "📄 Based on your documents: \"Writable Program in Short Form for Copy.pdf\"\n\nThe document provides a \"WEEK-1 (SHORT & EASY VERSION)\" which details a program to check grandparent relationships.\n\n### Short Algorithm (5 Points)\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is parent of Y.\n3.  Create a function to check if X is grandparent of Y using the `parent()` rule.\n4.  Call the grandparent function for given names.\n5.  Print whether the grandparent relation is true or false.\n\n### Simplified Program (Same Output)\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n### Output\n```\nYes, John is the grandparent of Susan.\n```",
+      "time": "09:12 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf"
+      ]
+    }
+  ],
+  "session-1763307778224-ir8aww": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "09:12 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": "hi",
+      "time": "09:13 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?",
+      "rawText": "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ?",
+      "time": "09:13 PM",
+      "sources": []
+    },
+    {
+      "id": 4,
+      "type": "user",
+      "text": "hi",
+      "time": "09:13 PM"
+    },
+    {
+      "id": 5,
+      "type": "bot",
+      "text": "🧠 सामान्य ज्ञानमा आधारित (तपाईंको कागजातहरूमा फेला परेन):\n\nनमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?",
+      "rawText": "🧠 सामान्य ज्ञानमा आधारित (तपाईंको कागजातहरूमा फेला परेन):\n\nनमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?",
+      "time": "09:13 PM",
+      "sources": []
+    },
+    {
+      "id": 6,
+      "type": "user",
+      "text": "hi",
+      "time": "09:13 PM"
+    },
+    {
+      "id": 7,
+      "type": "bot",
+      "text": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\nम तपाईंका कागजातहरूमा दिइएका जानकारीहरू, जस्तै:\n\n*   **सम्बन्धहरू (Grandparent)**\n*   **विशेषज्ञ प्रणाली (चिकित्सा / पशु)**\n*   **DFS र BFS एल्गोरिदम**\n*   **A\\* एल्गोरिदम**\n*   **Minimax (Tic Tac Toe)**\n*   **दुई-पास असेम्बलर**\n*   **म्याक्रो प्रोसेसर**\n*   **मिनी लिनक्स शेल**\n*   **शेल स्क्रिप्ट (फाइल + प्रक्रिया)**\n*   **पाइप र सिग्नल**\n*   **AI शेल उपयोगिता**\n*   **AI फाइल प्रबन्धक**\n\nसम्बन्धी प्रश्नहरूको जवाफ दिन सक्छु।",
+      "rawText": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\nम तपाईंका कागजातहरूमा दिइएका जानकारीहरू, जस्तै:\n\n*   **सम्बन्धहरू (Grandparent)**\n*   **विशेषज्ञ प्रणाली (चिकित्सा / पशु)**\n*   **DFS र BFS एल्गोरिदम**\n*   **A\\* एल्गोरिदम**\n*   **Minimax (Tic Tac Toe)**\n*   **दुई-पास असेम्बलर**\n*   **म्याक्रो प्रोसेसर**\n*   **मिनी लिनक्स शेल**\n*   **शेल स्क्रिप्ट (फाइल + प्रक्रिया)**\n*   **पाइप र सिग्नल**\n*   **AI शेल उपयोगिता**\n*   **AI फाइल प्रबन्धक**\n\nसम्बन्धी प्रश्नहरूको जवाफ दिन सक्छु।",
+      "time": "09:13 PM",
+      "sources": []
+    },
+    {
+      "id": 8,
+      "type": "user",
+      "text": "hi",
+      "time": "09:13 PM"
+    },
+    {
+      "id": 9,
+      "type": "bot",
+      "text": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "rawText": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "time": "09:13 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "user",
+      "text": "hi",
+      "time": "09:13 PM"
+    },
+    {
+      "id": 11,
+      "type": "bot",
+      "text": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "rawText": "नमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "time": "09:14 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "user",
+      "text": "hi",
+      "time": "09:17 PM"
+    },
+    {
+      "id": 13,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nनमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nनमस्ते! म तपाईंलाई कसरी मद्दत गर्न सक्छु?\n\n📄 Based on your documents: Writable Program in Short Form for Copy.pdf\n\nम तपाईंका उपलब्ध कागजातहरूमा दिइएका निम्न विषयहरूमा आधारित प्रश्नहरूको जवाफ दिन सक्छु:\n\n*   **WEEK-1: Grandparent Relation** (सम्बन्धहरू)\n*   **WEEK-2: Expert System** (चिकित्सा / पशु विशेषज्ञ प्रणाली)\n*   **WEEK-3: DFS & BFS** (DFS र BFS एल्गोरिदम)\n*   **WEEK-4: A\\* Algorithm** (A\\* एल्गोरिदम)\n*   **WEEK-5: Minimax** (Tic Tac Toe)\n*   **WEEK-6: Two-Pass Assembler** (दुई-पास असेम्बलर)\n*   **WEEK-7: Macro Processor** (म्याक्रो प्रोसेसर)\n*   **WEEK-8: Mini Linux Shell** (मिनी लिनक्स शेल)\n*   **WEEK-9: Shell Script** (फाइल + प्रक्रिया शेल स्क्रिप्ट)\n*   **WEEK-10: Pipes & Signals** (पाइप र सिग्नल)\n*   **WEEK-11: AI Shell Utility** (AI शेल उपयोगिता)\n*   **WEEK-12: AI File Manager** (AI फाइल प्रबन्धक)\n\nकृपया तपाईंको प्रश्न सोध्नुहोस्!",
+      "time": "09:17 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf"
+      ]
+    }
+  ],
+  "session-1763308051018-cu2246": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "09:17 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": "hi",
+      "time": "09:17 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "Hello! How can I assist you today with the provided documents?",
+      "rawText": "Hello! How can I assist you today with the provided documents?",
+      "time": "09:17 PM",
+      "sources": []
+    },
+    {
+      "id": 4,
+      "type": "user",
+      "text": "hi",
+      "time": "09:17 PM"
+    },
+    {
+      "id": 5,
+      "type": "bot",
+      "text": "नमस्ते! म तपाईंलाई उपलब्ध गराइएका कागजातहरूका साथ कसरी सहयोग गर्न सक्छु?",
+      "rawText": "नमस्ते! म तपाईंलाई उपलब्ध गराइएका कागजातहरूका साथ कसरी सहयोग गर्न सक्छु?",
+      "time": "09:17 PM",
+      "sources": []
+    },
+    {
+      "id": 6,
+      "type": "user",
+      "text": "hi",
+      "time": "09:17 PM"
+    },
+    {
+      "id": 7,
+      "type": "bot",
+      "text": "नमस्ते! हम अहाँक उपलब्ध कराओल गेल दस्तावेज़ सभक संग कोना सहायता कऽ सकैत छी?",
+      "rawText": "नमस्ते! हम अहाँक उपलब्ध कराओल गेल दस्तावेज़ सभक संग कोना सहायता कऽ सकैत छी?",
+      "time": "09:17 PM",
+      "sources": []
+    },
+    {
+      "id": 8,
+      "type": "user",
+      "text": "hi",
+      "time": "09:18 PM"
+    },
+    {
+      "id": 9,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nHello! I have reviewed the document \"Writable Program in Short Form for Copy.pdf\".\n\nHow can I assist you with the information contained in this document? For example, I can:\n- Explain any of the weekly programs (Week 1 to Week 12).\n- Describe the algorithms for a specific week.\n- Provide details about the short programs.\n- Answer questions about the concepts like DFS, BFS, A* Algorithm, Minimax, Assembler, Macro Processor, Shell Scripting, Pipes & Signals, or AI Utilities.\n\nPlease let me know what you'd like to know!",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nHello! I have reviewed the document \"Writable Program in Short Form for Copy.pdf\".\n\nHow can I assist you with the information contained in this document? For example, I can:\n- Explain any of the weekly programs (Week 1 to Week 12).\n- Describe the algorithms for a specific week.\n- Provide details about the short programs.\n- Answer questions about the concepts like DFS, BFS, A* Algorithm, Minimax, Assembler, Macro Processor, Shell Scripting, Pipes & Signals, or AI Utilities.\n\nPlease let me know what you'd like to know!",
+      "time": "09:18 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "user",
+      "text": "hi",
+      "time": "09:18 PM"
+    },
+    {
+      "id": 11,
+      "type": "bot",
+      "text": "📄 आपके दस्तावेज़ों के आधार पर: Writable Program in Short Form for Copy.pdf\n\nनमस्ते! मैंने 'Writable Program in Short Form for Copy.pdf' दस्तावेज़ की समीक्षा की है।\n\nमैं इस दस्तावेज़ में निहित जानकारी के साथ आपकी कैसे सहायता कर सकता हूँ? उदाहरण के लिए, मैं कर सकता हूँ:\n- किसी भी साप्ताहिक कार्यक्रम (सप्ताह 1 से सप्ताह 12) की व्याख्या कर सकता हूँ।\n- किसी विशिष्ट सप्ताह के लिए एल्गोरिथम का वर्णन कर सकता हूँ।\n- संक्षिप्त कार्यक्रमों के बारे में विवरण प्रदान कर सकता हूँ।\n- DFS, BFS, A* एल्गोरिथम, मिनिमैक्स, असेंबलर, मैक्रो प्रोसेसर, शेल स्क्रिप्टिंग, पाइप्स और सिग्नल्स, या AI यूटिलिटीज जैसी अवधारणाओं के बारे में प्रश्नों का उत्तर दे सकता हूँ।\n\nकृपया मुझे बताएं कि आप क्या जानना चाहेंगे!",
+      "rawText": "📄 आपके दस्तावेज़ों के आधार पर: Writable Program in Short Form for Copy.pdf\n\nनमस्ते! मैंने 'Writable Program in Short Form for Copy.pdf' दस्तावेज़ की समीक्षा की है।\n\nमैं इस दस्तावेज़ में निहित जानकारी के साथ आपकी कैसे सहायता कर सकता हूँ? उदाहरण के लिए, मैं कर सकता हूँ:\n- किसी भी साप्ताहिक कार्यक्रम (सप्ताह 1 से सप्ताह 12) की व्याख्या कर सकता हूँ।\n- किसी विशिष्ट सप्ताह के लिए एल्गोरिथम का वर्णन कर सकता हूँ।\n- संक्षिप्त कार्यक्रमों के बारे में विवरण प्रदान कर सकता हूँ।\n- DFS, BFS, A* एल्गोरिथम, मिनिमैक्स, असेंबलर, मैक्रो प्रोसेसर, शेल स्क्रिप्टिंग, पाइप्स और सिग्नल्स, या AI यूटिलिटीज जैसी अवधारणाओं के बारे में प्रश्नों का उत्तर दे सकता हूँ।\n\nकृपया मुझे बताएं कि आप क्या जानना चाहेंगे!",
+      "time": "09:18 PM",
+      "sources": []
+    },
+    {
+      "id": 12,
+      "type": "user",
+      "text": "hi",
+      "time": "09:18 PM"
+    },
+    {
+      "id": 13,
+      "type": "bot",
+      "text": "नमस्ते! मैले 'Writable Program in Short Form for Copy.pdf' कागजात समीक्षा गरेको छु। म तपाईंलाई यस कागजातमा भएको जानकारीका साथ कसरी सहयोग गर्न सक्छु?",
+      "rawText": "नमस्ते! मैले 'Writable Program in Short Form for Copy.pdf' कागजात समीक्षा गरेको छु। म तपाईंलाई यस कागजातमा भएको जानकारीका साथ कसरी सहयोग गर्न सक्छु?",
+      "time": "09:18 PM",
+      "sources": []
+    },
+    {
+      "id": 14,
+      "type": "user",
+      "text": "hi",
+      "time": "09:18 PM"
+    },
+    {
+      "id": 15,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nHello! I have reviewed the document \"Writable Program in Short Form for Copy.pdf\".\n\nHow can I assist you with the information contained in this document? For example, I can:\n- Explain any of the weekly programs (Week 1 to Week 12).\n- Describe the algorithms for a specific week.\n- Provide details about the short programs.\n- Answer questions about the concepts like DFS, BFS, A\\* Algorithm, Minimax, Assembler, Macro Processor, Shell Scripting, Pipes & Signals, or AI Utilities.\n\nPlease let me know what you'd like to know!",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nHello! I have reviewed the document \"Writable Program in Short Form for Copy.pdf\".\n\nHow can I assist you with the information contained in this document? For example, I can:\n- Explain any of the weekly programs (Week 1 to Week 12).\n- Describe the algorithms for a specific week.\n- Provide details about the short programs.\n- Answer questions about the concepts like DFS, BFS, A\\* Algorithm, Minimax, Assembler, Macro Processor, Shell Scripting, Pipes & Signals, or AI Utilities.\n\nPlease let me know what you'd like to know!",
+      "time": "09:18 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    }
+  ],
+  "session-1763310842164-rlqj4m": [
+    {
+      "id": 1,
+      "type": "bot",
+      "text": "Hello! 👋 I'm your AI Document Analyzer. Upload your documents and ask me anything! I remember context and can help with exam prep too!",
+      "time": "10:04 PM",
+      "sources": []
+    },
+    {
+      "id": 2,
+      "type": "user",
+      "text": "hi",
+      "time": "10:04 PM"
+    },
+    {
+      "id": 3,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nHello! How can I help you today with the provided documents?",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nHello! How can I help you today with the provided documents?",
+      "time": "10:04 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "user",
+      "text": "what is internet in short",
+      "time": "10:04 PM"
+    },
+    {
+      "id": 5,
+      "type": "bot",
+      "text": "Failed to generate response",
+      "time": "10:04 PM",
+      "sources": []
+    },
+    {
+      "id": 6,
+      "type": "user",
+      "text": "what is internet in short",
+      "time": "10:06 PM"
+    },
+    {
+      "id": 7,
+      "type": "bot",
+      "text": "🧠 Based on general knowledge (not found in your documents):\n\nThe internet is a vast, global network of interconnected computer networks that uses standard communication protocols to serve billions of users worldwide. It is a network of networks that consists of private, public, academic, business, and government networks of local to global scope, linked by a broad array of electronic, wireless, and optical networking technologies.\n\nIn short, it's a worldwide system of computer networks that allows users to share information and communicate with each other.",
+      "rawText": "🧠 Based on general knowledge (not found in your documents):\n\nThe internet is a vast, global network of interconnected computer networks that uses standard communication protocols to serve billions of users worldwide. It is a network of networks that consists of private, public, academic, business, and government networks of local to global scope, linked by a broad array of electronic, wireless, and optical networking technologies.\n\nIn short, it's a worldwide system of computer networks that allows users to share information and communicate with each other.",
+      "time": "10:06 PM",
+      "sources": [
+        "AI General Knowledge"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "user",
+      "text": "WEEK-1 (SHORT & EASY VERSION)",
+      "time": "10:07 PM"
+    },
+    {
+      "id": 9,
+      "type": "bot",
+      "text": "📄 Based on your documents: \"Writable Program in Short Form for Copy.pdf\"\n\n### WEEK-1 (SHORT & EASY VERSION)\n\nThis section describes a program to determine grandparent relationships using a simplified algorithm and a C program.\n\n#### Short Algorithm (5 Points)\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is a parent of Y.\n3.  Create a function to check if X is a grandparent of Y using the parent() rule.\n4.  Call the grandparent function for given names.\n5.  Print whether the grandparent relation is true or false.\n\n#### Simplified Program (Same Output)\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n#### Output\n```\nYes, John is the grandparent of Susan.\n```",
+      "rawText": "📄 Based on your documents: \"Writable Program in Short Form for Copy.pdf\"\n\n### WEEK-1 (SHORT & EASY VERSION)\n\nThis section describes a program to determine grandparent relationships using a simplified algorithm and a C program.\n\n#### Short Algorithm (5 Points)\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is a parent of Y.\n3.  Create a function to check if X is a grandparent of Y using the parent() rule.\n4.  Call the grandparent function for given names.\n5.  Print whether the grandparent relation is true or false.\n\n#### Simplified Program (Same Output)\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n#### Output\n```\nYes, John is the grandparent of Susan.\n```",
+      "time": "10:07 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "user",
+      "text": " WEEK-1: Prolog Basics (Facts, Rules, Queries)",
+      "time": "10:08 PM"
+    },
+    {
+      "id": 11,
+      "type": "bot",
+      "text": "Failed to generate response",
+      "time": "10:08 PM",
+      "sources": []
+    },
+    {
+      "id": 12,
+      "type": "user",
+      "text": " WEEK-1: Prolog Basics (Facts, Rules, Queries)",
+      "time": "10:09 PM"
+    },
+    {
+      "id": 13,
+      "type": "bot",
+      "text": "📄 Based on your documents: \"Algorithm of All Programs.pdf\" and \"Writable Program in Short Form for Copy.pdf\"\n\n### WEEK-1: Prolog Basics (Facts, Rules, Queries)\n\nThis week focuses on writing simple programs using facts, rules, and queries, often demonstrated through relational logic like parent-child relationships.\n\n#### Aim\nThe aim for WEEK-1 is to write simple Prolog programs using facts, rules, and queries.\n*Source: Algorithm of All Programs.pdf*\n\n#### Algorithm\n\n**General Algorithm for Prolog Basics:**\n1.  Start.\n2.  Insert parent–child facts.\n3.  Create rules like `parent()` and `grandparent()`.\n4.  Query using the defined facts/rules.\n5.  Display output.\n6.  Stop.\n*Source: Algorithm of All Programs.pdf*\n\n**Short Algorithm (General concept implementation):**\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is parent of Y.\n3.  Create a function to check if X is grandparent of Y using `parent()` rule.\n4.  Call the grandparent function for given names.\n5.  Print whether grandparent relation is true or false.\n*Source: Writable Program in Short Form for Copy.pdf*\n\n#### Simplified Program Example (in C)\n\nWhile the aim is Prolog basics, a simplified program demonstrating the grandparent relation logic is provided in C:\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n**Output:**\n`Yes, John is the grandparent of Susan.`\n*Source: Writable Program in Short Form for Copy.pdf*",
+      "rawText": "📄 Based on your documents: \"Algorithm of All Programs.pdf\" and \"Writable Program in Short Form for Copy.pdf\"\n\n### WEEK-1: Prolog Basics (Facts, Rules, Queries)\n\nThis week focuses on writing simple programs using facts, rules, and queries, often demonstrated through relational logic like parent-child relationships.\n\n#### Aim\nThe aim for WEEK-1 is to write simple Prolog programs using facts, rules, and queries.\n*Source: Algorithm of All Programs.pdf*\n\n#### Algorithm\n\n**General Algorithm for Prolog Basics:**\n1.  Start.\n2.  Insert parent–child facts.\n3.  Create rules like `parent()` and `grandparent()`.\n4.  Query using the defined facts/rules.\n5.  Display output.\n6.  Stop.\n*Source: Algorithm of All Programs.pdf*\n\n**Short Algorithm (General concept implementation):**\n1.  Store parent–child pairs in a list.\n2.  Create a function to check if X is parent of Y.\n3.  Create a function to check if X is grandparent of Y using `parent()` rule.\n4.  Call the grandparent function for given names.\n5.  Print whether grandparent relation is true or false.\n*Source: Writable Program in Short Form for Copy.pdf*\n\n#### Simplified Program Example (in C)\n\nWhile the aim is Prolog basics, a simplified program demonstrating the grandparent relation logic is provided in C:\n\n```c\n#include <stdio.h>\n#include <string.h>\n\nstruct Relation {\n    char parent[20];\n    char child[20];\n};\n\nstruct Relation facts[] = {\n    {\"john\", \"mary\"},\n    {\"mary\", \"susan\"}\n};\n\nint isParent(char* p, char* c) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && !strcmp(facts[i].child, c))\n            return 1;\n    return 0;\n}\n\nint isGrandparent(char* p, char* gc) {\n    for (int i = 0; i < 2; i++)\n        if (!strcmp(facts[i].parent, p) && isParent(facts[i].child, gc))\n            return 1;\n    return 0;\n}\n\nint main() {\n    if (isGrandparent(\"john\", \"susan\"))\n        printf(\"Yes, John is the grandparent of Susan.\\n\");\n    else\n        printf(\"No, John is not the grandparent of Susan.\\n\");\n}\n```\n\n**Output:**\n`Yes, John is the grandparent of Susan.`\n*Source: Writable Program in Short Form for Copy.pdf*",
+      "time": "10:09 PM",
+      "sources": [
+        "Writable Program in Short Form for Copy.pdf",
+        "Algorithm of All Programs.pdf"
+      ]
+    }
   ]
 }

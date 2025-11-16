@@ -29,14 +29,22 @@ A powerful AI-powered Question & Answer system that analyzes documents and provi
 - 🇮🇳 Bengali (বাংলা)
 - 🇳🇵 Nepali (नेपाली)
 - 🇮🇳 Maithili (मैथिली)
+- 🇮🇳 Kannada (ಕನ್ನಡ)
 
 ### 🎨 Additional Features
 - **Beautiful Markdown Rendering** - Professional formatting
 - **Mobile Bottom Navigation** - Native app-like experience
-- **Dark Mode** - Eye-friendly interface
-- **User Profiles** - Personalized experience
-- **Stats & Analytics** - Track your usage
-- **Chat History** - Save conversations
+- **PWA Support** - Install as native app on mobile/desktop
+- **User Profiles** - Personalized experience with dynamic updates
+- **Stats & Analytics** - Real-time usage tracking
+- **Chat History** - Save and manage conversations
+- **Security Enhanced** - Protected against XSS and data exposure
+- **Voice Input** - Speak your questions naturally
+- **Search in Chat** - Find messages instantly
+- **Pin Messages** - Save important responses
+- **Export Chat** - PDF & TXT with formatting
+- **Font Control** - Adjust text size (4 options)
+- **Share Chat** - Export & share conversations
 
 ---
 
@@ -178,6 +186,8 @@ Q-A-website/
 - **Multer** - File upload handling
 - **pdf-parse** - PDF text extraction
 - **mammoth** - DOCX text extraction
+- **Cloudflare R2** - Cloud storage
+- **Security Middleware** - XSS protection & rate limiting
 - **CORS** - Cross-origin resource sharing
 
 ### Frontend
@@ -187,7 +197,8 @@ Q-A-website/
 - **React Markdown** - Markdown rendering
 - **Lucide React** - Icon library
 - **Axios** - HTTP client
-- **Web Speech API** - Text-to-speech
+- **Web Speech API** - Text-to-speech & voice input
+- **PWA** - Progressive Web App support
 
 ---
 
@@ -224,9 +235,26 @@ Q-A-website/
 ### 5. View Statistics
 
 1. Go to **Profile**
-2. See your usage stats
+2. See your real-time usage stats
 3. Track documents analyzed
 4. View questions answered
+5. Check achievements earned
+6. Monitor activity chart
+
+### 6. Install as App
+
+1. **Mobile:** Browser will show "Add to Home Screen" prompt
+2. **Desktop:** Look for install icon in address bar
+3. **Manual:** Browser menu → "Install App" or "Add to Home Screen"
+4. App will work like native application
+
+### 7. Advanced Features
+
+1. **Voice Input:** Click microphone icon to speak questions
+2. **Search Chat:** Use search icon to find messages
+3. **Pin Messages:** Save important responses
+4. **Export Chat:** Download as PDF or TXT
+5. **Font Control:** Adjust text size for readability
 
 ---
 
@@ -277,12 +305,24 @@ Features:
 - **Markdown-aware** - strips formatting for clean speech
 - **Offline** - works without internet
 
-### 4. Mobile Responsive
+### 4. Progressive Web App (PWA)
 
+- **Install as native app** on mobile and desktop
+- **Offline capabilities** with service worker
+- **App-like experience** with custom icons
 - **Bottom navigation bar** on mobile (like native apps)
 - **Touch-optimized** buttons and controls
 - **Responsive text** sizing
 - **Safe area** support for iPhone notch
+
+### 5. Security Features
+
+- **XSS Protection** - Input sanitization and validation
+- **Rate Limiting** - Prevents API abuse (100 requests/15min)
+- **Path Validation** - Directory traversal protection
+- **Secure Logging** - No sensitive data in logs
+- **API Key Protection** - Never exposed in browser
+- **File Upload Security** - Type and size validation
 
 ---
 
@@ -317,18 +357,24 @@ const API_BASE_URL = 'http://localhost:5000/api';
 ## 📱 Browser Support
 
 ### Desktop
-- ✅ Chrome 90+ (Recommended)
-- ✅ Edge 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
+- ✅ Chrome 90+ (Recommended for PWA)
+- ✅ Edge 90+ (Excellent PWA support)
+- ✅ Firefox 88+ (Good support)
+- ✅ Safari 14+ (Basic PWA support)
 
 ### Mobile
-- ✅ Chrome Mobile
-- ✅ Safari iOS
-- ✅ Samsung Internet
-- ✅ Firefox Mobile
+- ✅ Chrome Mobile (Best PWA experience)
+- ✅ Safari iOS (Good PWA support)
+- ✅ Samsung Internet (Excellent support)
+- ✅ Firefox Mobile (Basic support)
 
-### Text-to-Speech
+### PWA Installation
+- ✅ Android: Chrome, Edge, Samsung Internet
+- ✅ iOS: Safari (Add to Home Screen)
+- ✅ Windows: Chrome, Edge
+- ✅ macOS: Chrome, Edge, Safari
+
+### Text-to-Speech & Voice Input
 - ✅ Chrome (Best Indian voice support)
 - ✅ Edge (Excellent support)
 - ✅ Safari (Good support)
@@ -404,7 +450,9 @@ npm install
   "sessionId": "session-123",
   "documents": [{"id": "doc1", "name": "file.pdf"}],
   "context": {"topic": "programming"},
-  "language": "en"
+  "language": "en",
+  "userApiKey": "optional_user_api_key",
+  "userId": "user-123"
 }
 ```
 
@@ -422,19 +470,47 @@ npm install
 **POST** `/api/documents/upload`
 - Content-Type: `multipart/form-data`
 - Field: `file`
-- Returns: Document metadata
+- Max Size: 50MB
+- Supported: PDF, DOCX, TXT, PPTX
+- Returns: Document metadata with R2 URL
 
-**GET** `/api/documents/list`
-- Returns: Array of uploaded documents
+**GET** `/api/documents/list?userId=user-123`
+- Returns: User's documents array
 
-### Settings API
+**DELETE** `/api/documents/:id`
+- Deletes document and cleans up storage
 
-**GET** `/api/profile/:userId/settings`
-- Returns: User settings
+### Profile & Stats API
 
-**PUT** `/api/profile/:userId/settings`
-- Body: Settings object
-- Returns: Updated settings
+**GET** `/api/profile/:userId`
+- Returns: User profile data
+
+**PUT** `/api/profile/:userId`
+- Updates user profile
+
+**GET** `/api/stats/:userId`
+- Returns: Real-time user statistics
+
+**POST** `/api/stats/:userId/increment`
+- Increments specific stat counter
+
+### Chat History API
+
+**GET** `/api/history/:userId`
+- Returns: User's chat sessions
+
+**POST** `/api/history/:userId`
+- Saves chat session
+
+**DELETE** `/api/history/:userId/:sessionId`
+- Deletes specific chat session
+
+### Security Features
+
+- **Rate Limiting:** 100 requests per 15 minutes per IP
+- **Input Sanitization:** All inputs cleaned for XSS
+- **Path Validation:** File operations secured
+- **API Key Protection:** Never logged or exposed
 
 ---
 
@@ -452,6 +528,13 @@ npm install
 - [React Documentation](https://react.dev/)
 - [TailwindCSS Documentation](https://tailwindcss.com/)
 - [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)
+- [PWA Documentation](https://web.dev/progressive-web-apps/)
+- [Cloudflare R2 Documentation](https://developers.cloudflare.com/r2/)
+
+### Security Documentation
+- `SECURITY.md` - Complete security implementation
+- `SECURITY_FIXES.md` - Latest security updates
+- `.env.example` - Secure environment template
 
 ---
 
@@ -491,33 +574,47 @@ If you have any questions or issues:
 ## 🗺️ Roadmap
 
 ### Current Features ✅
-- ✅ Document upload & analysis
-- ✅ AI-powered Q&A
-- ✅ 8 languages support
-- ✅ Text-to-speech
-- ✅ Mobile responsive
-- ✅ Settings & profiles
+- ✅ Document upload & analysis (PDF, DOCX, TXT, PPTX)
+- ✅ AI-powered Q&A with context memory
+- ✅ 9 languages support with real-time switching
+- ✅ Text-to-speech with Indian voices
+- ✅ Voice input for questions
+- ✅ Mobile responsive with PWA support
+- ✅ Dynamic user profiles with real-time stats
+- ✅ Chat search, pin messages, export features
+- ✅ Security enhanced (XSS protection, rate limiting)
+- ✅ Cloud storage integration (Cloudflare R2)
+- ✅ Font control and accessibility features
+- ✅ Chat history management
+- ✅ Achievement system
+- ✅ Activity tracking
+- ✅ Install as native app
 
 ### Planned Features 🚧
 - 🔄 Database integration (PostgreSQL/MongoDB)
 - 🔄 User authentication (JWT/OAuth)
 - 🔄 Real-time collaboration
-- 🔄 Advanced analytics
-- 🔄 More language support
-- 🔄 Voice input
-- 🔄 Document comparison
-- 🔄 Export conversations
+- 🔄 Advanced analytics dashboard
+- 🔄 More language support (10+ languages)
+- 🔄 Document comparison tool
+- 🔄 Offline mode support
+- 🔄 Team workspaces
+- 🔄 API key management
+- 🔄 Custom AI model integration
 
 ---
 
 ## 📊 Project Stats
 
-- **Total Languages:** 8
-- **Supported File Types:** PDF, DOCX, TXT
+- **Total Languages:** 9 (Added Kannada)
+- **Supported File Types:** PDF, DOCX, TXT, PPTX
 - **AI Model:** Gemini 2.5 Flash
 - **Max Document Size:** 50MB
 - **Response Time:** < 3 seconds
 - **Browser Support:** All modern browsers
+- **PWA Ready:** Install as native app
+- **Security:** XSS protected, rate limited
+- **Features:** 15+ complete features
 
 ---
 
@@ -532,9 +629,11 @@ If you have any questions or issues:
 
 ### Performance Tips:
 - Keep documents under 10MB for faster processing
-- Close unused browser tabs
+- Use Chrome for best PWA and voice experience
+- Install as PWA for faster loading
 - Clear chat history periodically
 - Update to latest Node.js version
+- Enable browser notifications for better UX
 
 ---
 
@@ -553,6 +652,9 @@ If you have any questions or issues:
 - [ ] First question asked
 - [ ] Language changed in settings
 - [ ] Text-to-speech tested
+- [ ] Voice input tested
+- [ ] Profile customized
+- [ ] PWA install prompt tested
 
 **All checked? You're ready to go! 🚀**
 

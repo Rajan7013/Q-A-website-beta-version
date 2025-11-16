@@ -8,6 +8,7 @@ import unzipper from 'unzipper';
 import xml2js from 'xml2js';
 import { setDocumentsStore } from './chat.js';
 import { uploadToR2, deleteFromR2 } from '../utils/r2Storage.js';
+import { validatePath, validateFileExtension, sanitizeFilename } from '../utils/pathSecurity.js';
 
 const router = express.Router();
 const DOCUMENTS_FILE = './documents.json';
@@ -51,8 +52,14 @@ const storage = multer.diskStorage({
     }
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
+    try {
+      const sanitizedName = sanitizeFilename(file.originalname);
+      const ext = validateFileExtension(sanitizedName, ['.pdf', '.docx', '.txt', '.pptx']);
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + sanitizedName);
+    } catch (error) {
+      cb(error);
+    }
   }
 });
 
@@ -167,11 +174,31 @@ router.get('/list', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Validate document ID
+    if (!id || typeof id !== 'string' || id.length > 50) {
+      return res.status(400).json({ error: 'Invalid document ID' });
+    }
+    
     const docToDelete = documents.find(doc => doc.id.toString() === id);
     
+    if (!docToDelete) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
     // Delete from R2 if stored there
-    if (docToDelete && docToDelete.r2FileName) {
+    if (docToDelete.r2FileName) {
       await deleteFromR2(docToDelete.r2FileName);
+    }
+    
+    // Validate local file path before deletion
+    if (docToDelete.path) {
+      try {
+        const validatedPath = validatePath(docToDelete.path, './uploads');
+        await fs.unlink(validatedPath).catch(() => {});
+      } catch (pathError) {
+        console.error('Path validation error:', pathError.message);
+      }
     }
     
     documents = documents.filter(doc => doc.id.toString() !== id);
@@ -182,6 +209,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Document deleted successfully' });
   } catch (error) {
+    console.error('Delete document error:', error.message);
     res.status(500).json({ error: 'Failed to delete document' });
   }
 });

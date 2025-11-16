@@ -6,7 +6,8 @@ import UploadPage from './components/UploadPage';
 import DocumentsPage from './components/DocumentsPage';
 import SettingsPage from './components/SettingsPage';
 import ProfilePage from './components/ProfilePage';
-import { getDocuments, getProfile, getSettings, getStats, incrementStat, unlockAchievement, getRecentChats, saveChatSession, deleteChatSession, renameChatSession } from './utils/api';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { getDocuments, getProfile, getStats, incrementStat, unlockAchievement, getRecentChats, saveChatSession, deleteChatSession, renameChatSession } from './utils/api';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -46,18 +47,40 @@ function App() {
     try {
       setIsLoading(true);
       
+      // Load settings with default values
+      const localSettings = { language: 'en', notifications: true, autoSave: true, geminiApiKey: '' };
+      
+      // Load profile from localStorage first (most up-to-date)
+      const savedProfile = localStorage.getItem(`profile_${userId}`);
+      let profileData;
+      
+      if (savedProfile) {
+        try {
+          profileData = JSON.parse(savedProfile);
+        } catch (error) {
+          console.error('Failed to parse saved profile:', error);
+        }
+      }
+      
       // Fetch all data in parallel
-      const [docs, profile, userSettings, userStats, chats] = await Promise.all([
+      const [docs, backendProfile, userStats, chats] = await Promise.all([
         getDocuments(userId),
-        getProfile(userId),
-        getSettings(userId),
+        getProfile(userId).catch(() => null), // Don't fail if backend is down
         getStats(userId),
         getRecentChats(userId, 20)
       ]);
       
       setUploadedDocs(docs || []);
-      setUserProfile(profile);
-      setSettings(userSettings);
+      // Use localStorage profile if available, otherwise backend or default
+      setUserProfile(profileData || backendProfile || {
+        name: 'AI User',
+        email: 'user@example.com',
+        bio: 'Exploring the world of AI-powered document analysis',
+        avatar: '👨💻',
+        joined: new Date().toLocaleDateString()
+      });
+      setSettings(localSettings);
+      
       setStats(userStats);
       setChatSessions(chats || []);
     } catch (error) {
@@ -69,6 +92,19 @@ function App() {
 
   useEffect(() => {
     fetchInitialData();
+    
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
   }, [userId]);
 
   const handleDocumentUpload = async (newDoc) => {
@@ -256,7 +292,15 @@ function App() {
       case 'settings':
         return <SettingsPage settings={settings} setSettings={setSettings} userId={userId} />;
       case 'profile':
-        return <ProfilePage userProfile={userProfile} setUserProfile={setUserProfile} userId={userId} stats={stats} />;
+        return (
+          <ProfilePage 
+            userProfile={userProfile} 
+            setUserProfile={setUserProfile} 
+            userId={userId} 
+            stats={stats}
+            key={`profile-${userId}`} // Force re-render when userId changes
+          />
+        );
       default:
         return <HomePage setCurrentPage={setCurrentPage} uploadedDocs={uploadedDocs} userId={userId} stats={stats} />;
     }
@@ -283,6 +327,7 @@ function App() {
           {renderPage()}
         </div>
       </main>
+      <PWAInstallPrompt />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Brain, User, Target, FileCheck, Loader, Volume2, VolumeX, Pause, Play, Globe, Trash2, Copy, Mic, MicOff, Download, Search, X, ChevronUp, ChevronDown, Lightbulb, Sparkles, Pin, PinOff, BarChart3, Share2, Type, Plus, Minus, MessageSquare, Edit3, MoreVertical } from 'lucide-react';
-import { sendMessage, saveChatSession, incrementStat, logActivity, updateSettings, getChatMessages } from '../utils/api';
+import { sendMessage, saveChatSession, incrementStat, logActivity, getChatMessages } from '../utils/api';
 import { Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -25,7 +25,7 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
   });
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(settings?.language || 'en');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [isListening, setIsListening] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,13 +46,11 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
   const recognitionRef = useRef(null);
   const searchResultRefs = useRef([]);
 
-  // Update selected language when settings change
+  // Load language from localStorage on mount
   useEffect(() => {
-    if (settings?.language) {
-      setSelectedLanguage(settings.language);
-      console.log('🔄 Language synced from settings:', settings.language);
-    }
-  }, [settings]);
+    const savedLang = localStorage.getItem(`user-lang-${userId}`) || 'en';
+    setSelectedLanguage(savedLang);
+  }, [userId]);
 
   // Load chat messages when session changes
   useEffect(() => {
@@ -316,6 +314,12 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
       return;
     }
     
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      console.log('🔊 Invalid text for speech');
+      return;
+    }
+    
     // Clean text from markdown
     const cleanText = stripMarkdown(text);
     
@@ -325,8 +329,8 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings, onSessi
       return;
     }
     
-    // Use the most current language (prioritize selectedLanguage)
-    const currentLanguage = selectedLanguage || settings?.language || 'en';
+    // Use the selected language
+    const currentLanguage = selectedLanguage || 'en';
     console.log('🔊 Speaking in language:', currentLanguage, 'Text length:', cleanText.length, 'Text:', cleanText.substring(0, 50) + '...');
     
     // Force reload voices to ensure they're available
@@ -1220,6 +1224,12 @@ Exported on: ${new Date().toLocaleString()}
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
+    
+    // Input validation
+    if (inputMessage.length > 10000) {
+      alert('Message too long. Please keep it under 10,000 characters.');
+      return;
+    }
 
     const userMessage = {
       id: chatMessages.length + 1,
@@ -1238,12 +1248,12 @@ Exported on: ${new Date().toLocaleString()}
         .filter(doc => doc.status === 'processed')
         .map(doc => ({ id: doc.id, name: doc.name, pages: doc.pages }));
 
-      // Use the most current language setting
-      const language = selectedLanguage || settings?.language || 'en';
+      // Use the selected language
+      const language = selectedLanguage || 'en';
       console.log('🌍 Using Language:', language, 'Selected:', selectedLanguage, 'Settings:', settings?.language);
       
-      // Get user's API key from settings
-      const userApiKey = settings?.geminiApiKey?.trim() || null;
+      // Get user's API key directly from localStorage
+      const userApiKey = localStorage.getItem(`user-api-${userId}`)?.trim() || null;
       
       console.log('🚀 Sending message with language:', language);
       console.log('🔑 Using user API key:', userApiKey ? 'Yes' : 'No (system fallback)');
@@ -1970,16 +1980,7 @@ Exported on: ${new Date().toLocaleString()}
                   document.body.appendChild(notification);
                   setTimeout(() => notification.remove(), 2500);
                   
-                  // Try to save settings in background (don't show errors)
-                  try {
-                    const updatedSettings = { ...settings, language: newLanguage };
-                    await updateSettings(userId, updatedSettings);
-                    setSettings(updatedSettings);
-                    console.log('✅ Settings saved successfully');
-                  } catch (error) {
-                    console.log('⚠️ Settings save failed, but language still works:', error);
-                    // Don't show error to user since language switching still works
-                  }
+                  // Language changes work immediately without storage
                 }}
                 className="appearance-none bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[9px] sm:text-xs font-bold px-1.5 sm:px-3 py-1 pr-5 sm:pr-7 rounded-lg cursor-pointer hover:from-blue-700 hover:to-purple-700 active:scale-95 transition-all whitespace-nowrap touch-manipulation min-w-[60px] sm:min-w-[80px]"
                 style={{ colorScheme: 'dark' }}

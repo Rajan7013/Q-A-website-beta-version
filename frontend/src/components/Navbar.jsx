@@ -57,7 +57,7 @@ const Navbar = ({ currentPage, setCurrentPage, userProfile }) => {
                 className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white px-2.5 md:px-3 lg:px-4 py-2 md:py-2.5 rounded-lg font-bold transition-all duration-300 transform hover:scale-110 shadow-xl flex items-center space-x-1 text-xs md:text-sm lg:text-base"
               >
                 <span className="text-sm md:text-base">{userProfile?.avatar || '👤'}</span>
-                <span className="hidden lg:inline">{userProfile?.name?.split(' ')[0] || 'User'}</span>
+                <span className="hidden lg:inline">{userProfile?.name?.split(' ')[0] || 'Guest'}</span>
               </button>
             </div>
           </div>

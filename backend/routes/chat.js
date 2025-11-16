@@ -22,9 +22,9 @@ export function getDocumentsStore() {
 router.post('/message', async (req, res) => {
   try {
     const { message, sessionId, documents, context, language = 'en', userApiKey } = req.body;
-    // Only log language changes and API key usage occasionally
+    // Only log language changes (API key info removed for security)
     if (Math.random() < 0.1) { // Log 10% of requests to reduce spam
-      console.log('🌍 Language:', language, '| API Key:', userApiKey ? 'User' : 'System');
+      console.log('🌍 Language:', language);
     }
 
     if (!message) {

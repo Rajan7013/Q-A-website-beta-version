@@ -19,7 +19,7 @@ export async function generateResponse(prompt, conversationHistory = [], userApi
   const genAIInstance = new GoogleGenerativeAI(apiKey);
   
   console.log('🔑 Using API key:', userApiKey ? 'User\'s personal key' : 'System fallback key');
-  console.log('🔑 API key length:', apiKey.length, 'starts with:', apiKey.substring(0, 10) + '...');
+  // API key details removed for security - no logging of sensitive data
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
