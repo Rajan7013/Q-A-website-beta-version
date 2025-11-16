@@ -1,23 +1,25 @@
 import express from 'express';
 import { generateResponse } from '../utils/gemini.js';
+import supabase from '../utils/supabaseClient.js'; // [!code ++] IMPORT SUPABASE
 
 const router = express.Router();
 
 // Store conversation context in memory (use Redis/DB in production)
+// ⚠️ WARNING: This will be erased on Vercel. This is the next thing we must fix.
 const conversationContexts = new Map();
 
-// Import documents array from documents route
-let documentsStore = [];
-
-// Function to set documents store (called from documents route)
-export function setDocumentsStore(docs) {
-  documentsStore = docs;
-}
-
-// Function to get documents store
-export function getDocumentsStore() {
-  return documentsStore;
-}
+// [!code --] // Import documents array from documents route
+// [!code --] let documentsStore = [];
+// [!code --] 
+// [!code --] // Function to set documents store (called from documents route)
+// [!code --] export function setDocumentsStore(docs) {
+// [!code --]   documentsStore = docs;
+// [!code --] }
+// [!code --] 
+// [!code --] // Function to get documents store
+// [!code --] export function getDocumentsStore() {
+// [!code --]   return documentsStore;
+// [!code --] }
 
 router.post('/message', async (req, res) => {
   try {
@@ -44,12 +46,36 @@ router.post('/message', async (req, res) => {
       conversationContext.documents = documents;
     }
 
-    // Build prompt with context and document content (filter by user)
+    // [!code --] // Build prompt with context and document content (filter by user)
+    // [!code --] const documentIds = documents?.map(d => d.id) || [];
+    // [!code --] const userDocuments = documentsStore.filter(doc => 
+    // [!code --]   documentIds.includes(doc.id) && 
+    // [!code --]   (!req.body.userId || doc.userId === req.body.userId)
+    // [!code --] );
+    // [!code --] const prompt = buildPrompt(message, conversationContext, documentIds, language, userDocuments);
+
+    // [!code ++] // NEW: Fetch document content from Supabase
     const documentIds = documents?.map(d => d.id) || [];
-    const userDocuments = documentsStore.filter(doc => 
-      documentIds.includes(doc.id) && 
-      (!req.body.userId || doc.userId === req.body.userId)
-    );
+    let userDocuments = []; // Default to empty
+
+    if (documentIds.length > 0) {
+      console.log(`💬 Fetching content for ${documentIds.length} docs from Supabase...`);
+      const { data: fetchedDocs, error: docError } = await supabase
+        .from('documents')
+        // We MUST select textContent for the AI to read
+        .select('id, name, textContent')
+        .in('id', documentIds)
+        .eq('userId', req.body.userId || 'anonymous'); // Ensure user owns docs
+
+      if (docError) {
+        console.error('Supabase error fetching documents for chat:', docError);
+        // Don't throw, just proceed without documents
+      } else {
+        userDocuments = fetchedDocs;
+      }
+    }
+    
+    // [!code ++] // Pass the freshly fetched documents to buildPrompt
     const prompt = buildPrompt(message, conversationContext, documentIds, language, userDocuments);
 
     // Generate response from Gemini (use user's API key if provided)
@@ -113,7 +139,7 @@ router.post('/validate-key', async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey.trim());
     
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use 1.5-flash
       const result = await model.generateContent("Hello, this is a test. Please respond with 'API key is working'.");
       const response = await result.response;
       const text = response.text();
@@ -133,6 +159,10 @@ router.post('/validate-key', async (req, res) => {
   }
 });
 
+// ⚠️ This function is now broken, but it's okay because we override it
+// by passing `userDocuments` (from Supabase) into `buildPrompt`.
+// The logic `availableDocs = userDocuments || ...` will use our Supabase data
+// and skip the broken `documentsStore.find` part.
 function buildPrompt(message, context, documentIds = [], language = 'en', userDocuments = null) {
   // Language name mapping
   const languageNames = {
@@ -153,9 +183,14 @@ function buildPrompt(message, context, documentIds = [], language = 'en', userDo
 
   // Add document context with actual content (use filtered user documents if provided)
   if (documentIds && documentIds.length > 0) {
-    availableDocs = userDocuments || documentIds
-      .map(docId => documentsStore.find(d => d.id === docId))
-      .filter(doc => doc && doc.textContent);
+    // [!code --] This line is now broken, but it's okay because userDocuments is supplied
+    // [!code --] availableDocs = userDocuments || documentIds
+    // [!code --]   .map(docId => documentsStore.find(d => d.id === docId))
+    // [!code --]   .filter(doc => doc && doc.textContent);
+    
+    // [!code ++] Because we pass userDocuments from our Supabase query, this line works.
+    // [!code ++] It uses userDocuments and skips the broken documentsStore part.
+    availableDocs = userDocuments || [];
     
     if (availableDocs.length > 0) {
       hasDocuments = true;
