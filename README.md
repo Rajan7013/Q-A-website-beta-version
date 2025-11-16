@@ -334,8 +334,31 @@ Features:
 
 **Environment Variables** (`backend/.env`):
 ```env
-GEMINI_API_KEY=your_api_key_here
+# Environment Variables Template
+# Copy this file to .env and fill in your actual values
+
+# Gemini AI Configuration
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Server Configuration
 PORT=5000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:5173
+
+# Cloudflare R2 Configuration (Optional)
+R2_ACCESS_KEY_ID=your_r2_access_key_here
+R2_SECRET_ACCESS_KEY=your_r2_secret_key_here
+R2_ENDPOINT=your_r2_endpoint_here
+R2_BUCKET_NAME=your_bucket_name_here
+R2_PUBLIC_URL=your_public_url_here
+
+# Security Configuration
+SESSION_SECRET=your_session_secret_here
+JWT_SECRET=your_jwt_secret_here
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
 ```
 
 **Server Settings** (`backend/server.js`):
