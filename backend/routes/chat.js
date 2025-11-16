@@ -343,7 +343,7 @@ function extractTopic(message, response) {
     return 'machine learning';
   } else if (lowerMsg.includes('python')) {
     return 'python programming';
-  } else if (lowerMsg.push('data structure')) { // Note: this was a typo in your original, fixed to .includes()
+  } else if (lowerMsg.includes('data structure')) { // [!code ++] THE FIX IS HERE
     return 'data structures';
   } else if (lowerMsg.includes('algorithm')) {
     return 'algorithms';
