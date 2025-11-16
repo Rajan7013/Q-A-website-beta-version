@@ -1,5 +1,4 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import fs from 'fs/promises';
 import path from 'path';
 
 // Initialize R2 client
@@ -13,16 +12,15 @@ const r2Client = new S3Client({
 });
 
 // Upload file to R2
-export const uploadToR2 = async (filePath, fileName) => {
+export const uploadToR2 = async (fileBuffer, fileName) => { // Changed to fileBuffer
   try {
-    const fileBuffer = await fs.readFile(filePath);
     const fileExtension = path.extname(fileName);
     const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1E9)}${fileExtension}`;
     
     const uploadParams = {
       Bucket: process.env.R2_BUCKET_NAME,
       Key: uniqueFileName,
-      Body: fileBuffer,
+      Body: fileBuffer, // Pass the buffer directly
       ContentType: getContentType(fileExtension),
     };
 

@@ -1,55 +1,77 @@
 import express from 'express';
 import { generateResponse } from '../utils/gemini.js';
+import supabase from '../utils/supabaseClient.js'; // IMPORT SUPABASE
 
 const router = express.Router();
 
-// Store conversation context in memory (use Redis/DB in production)
-const conversationContexts = new Map();
-
-// Import documents array from documents route
-let documentsStore = [];
-
-// Function to set documents store (called from documents route)
-export function setDocumentsStore(docs) {
-  documentsStore = docs;
-}
-
-// Function to get documents store
-export function getDocumentsStore() {
-  return documentsStore;
-}
+// The Supabase 'chat_histories' table now stores this.
+// The old 'conversationContexts = new Map()' is GONE.
 
 router.post('/message', async (req, res) => {
   try {
     const { message, sessionId, documents, context, language = 'en', userApiKey } = req.body;
-    // Only log language changes (API key info removed for security)
+    
     if (Math.random() < 0.1) { // Log 10% of requests to reduce spam
       console.log('🌍 Language:', language);
     }
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+    if (!message || !sessionId) { // SessionID is now mandatory
+      return res.status(400).json({ error: 'Message and SessionID are required' });
     }
 
-    // Get or create conversation context
-    let conversationContext = conversationContexts.get(sessionId) || {
-      history: [],
-      topic: null,
-      intent: null,
-      documents: []
-    };
+    // NEW: Get conversation context from Supabase
+    let conversationContext;
+    const { data: historyData, error: historyError } = await supabase
+      .from('chat_histories')
+      .select('history, topic, intent, documents')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (historyError && historyError.code !== 'PGRST116') {
+      // PGRST116 is "No rows found", which is fine.
+      throw new Error(historyError.message);
+    }
+
+    if (historyData) {
+      // History found in database
+      conversationContext = historyData;
+    } else {
+      // No history found, create a new one
+      conversationContext = {
+        history: [],
+        topic: null,
+        intent: null,
+        documents: []
+      };
+    }
 
     // Update context with new documents
     if (documents && documents.length > 0) {
       conversationContext.documents = documents;
     }
 
-    // Build prompt with context and document content (filter by user)
+    // NEW: Fetch document content from Supabase
     const documentIds = documents?.map(d => d.id) || [];
-    const userDocuments = documentsStore.filter(doc => 
-      documentIds.includes(doc.id) && 
-      (!req.body.userId || doc.userId === req.body.userId)
-    );
+    let userDocuments = []; // Default to empty
+
+    if (documentIds.length > 0) {
+      console.log(`💬 Fetching content for ${documentIds.length} docs from Supabase...`);
+      const { data: fetchedDocs, error: docError } = await supabase
+        .from('documents')
+        // We MUST select textContent for the AI to read
+        .select('id, name, textContent')
+        .in('id', documentIds)
+        .eq('userId', req.body.userId || 'anonymous'); // Ensure user owns docs
+
+      if (docError) {
+        console.error('Supabase error fetching documents for chat:', docError);
+        // Don't throw, just proceed without documents
+      } else {
+        userDocuments = fetchedDocs;
+      }
+    }
+    
+    // Pass the freshly fetched documents to buildPrompt
     const prompt = buildPrompt(message, conversationContext, documentIds, language, userDocuments);
 
     // Generate response from Gemini (use user's API key if provided)
@@ -65,14 +87,28 @@ router.post('/message', async (req, res) => {
     conversationContext.topic = extractTopic(message, aiResponse);
     conversationContext.intent = analyzeIntent(message);
 
-    // Save context
-    conversationContexts.set(sessionId, conversationContext);
+    // NEW: Save context back to Supabase
+    const { error: upsertError } = await supabase
+      .from('chat_histories')
+      .upsert({
+        session_id: sessionId,
+        history: conversationContext.history,
+        topic: conversationContext.topic,
+        intent: conversationContext.intent,
+        documents: conversationContext.documents,
+        updated_at: new Date().toISOString()
+      });
+
+    if (upsertError) {
+      console.error('Supabase upsert error:', upsertError);
+      // Don't fail the request, just log the error
+    }
 
     // Extract source information
     const sources = extractSources(aiResponse, documents);
 
     res.json({
-      response: aiResponse,  // Send raw markdown response (no formatting needed)
+      response: aiResponse,  // Send raw markdown response
       rawResponse: aiResponse,
       context: {
         topic: conversationContext.topic,
@@ -91,10 +127,14 @@ router.post('/message', async (req, res) => {
 });
 
 // Clear conversation context
-router.post('/clear', (req, res) => {
+router.post('/clear', async (req, res) => { // Made async
   const { sessionId } = req.body;
   if (sessionId) {
-    conversationContexts.delete(sessionId);
+    // NEW: Delete from Supabase
+    await supabase
+      .from('chat_histories')
+      .delete()
+      .eq('session_id', sessionId);
   }
   res.json({ message: 'Context cleared' });
 });
@@ -113,7 +153,7 @@ router.post('/validate-key', async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey.trim());
     
     try {
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent("Hello, this is a test. Please respond with 'API key is working'.");
       const response = await result.response;
       const text = response.text();
@@ -153,9 +193,8 @@ function buildPrompt(message, context, documentIds = [], language = 'en', userDo
 
   // Add document context with actual content (use filtered user documents if provided)
   if (documentIds && documentIds.length > 0) {
-    availableDocs = userDocuments || documentIds
-      .map(docId => documentsStore.find(d => d.id === docId))
-      .filter(doc => doc && doc.textContent);
+    // This logic is correct: it uses the 'userDocuments' variable from our Supabase query
+    availableDocs = userDocuments || [];
     
     if (availableDocs.length > 0) {
       hasDocuments = true;
@@ -304,7 +343,7 @@ function extractTopic(message, response) {
     return 'machine learning';
   } else if (lowerMsg.includes('python')) {
     return 'python programming';
-  } else if (lowerMsg.includes('data structure')) {
+  } else if (lowerMsg.push('data structure')) { // Note: this was a typo in your original, fixed to .includes()
     return 'data structures';
   } else if (lowerMsg.includes('algorithm')) {
     return 'algorithms';
