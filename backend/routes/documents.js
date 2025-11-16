@@ -1,79 +1,63 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs/promises';
+// [!code --] import fs from 'fs/promises'; // No longer need fs for most operations
 import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import unzipper from 'unzipper';
 import xml2js from 'xml2js';
 import { setDocumentsStore } from './chat.js';
 import { uploadToR2, deleteFromR2 } from '../utils/r2Storage.js';
-import { validatePath, validateFileExtension, sanitizeFilename } from '../utils/pathSecurity.js';
+// [!code --] import { validatePath, validateFileExtension, sanitizeFilename } from '../utils/pathSecurity.js';
+// We only need extension validation and sanitize now
+import { validateFileExtension, sanitizeFilename } from '../utils/pathSecurity.js'; // [!code ++]
+
 
 const router = express.Router();
-const DOCUMENTS_FILE = './documents.json';
 
-// Load documents from file on startup
-let documents = [];
-const loadDocuments = async () => {
-  try {
-    const data = await fs.readFile(DOCUMENTS_FILE, 'utf-8');
-    documents = JSON.parse(data);
-    setDocumentsStore(documents);
-    console.log(`Loaded ${documents.length} documents from storage`);
-  } catch (error) {
-    console.log('No existing documents file, starting fresh');
-    documents = [];
-  }
-};
+// [!code --] const DOCUMENTS_FILE = './documents.json';
+// [!code --] // Load documents from file on startup
+// [!code --] let documents = [];
+// [!code --] const loadDocuments = async () => { ... };
+// [!code --] // Save documents to file
+// [!code --] const saveDocuments = async () => { ... };
+// [!code --] // Initialize documents on startup
+// [!code --] loadDocuments();
 
-// Save documents to file
-const saveDocuments = async () => {
-  try {
-    await fs.writeFile(DOCUMENTS_FILE, JSON.stringify(documents, null, 2));
-  } catch (error) {
-    console.error('Failed to save documents:', error);
-  }
-};
-
-// Initialize documents on startup
-loadDocuments();
+// =================================================================
+// !! IMPORTANT !!
+// Using a local variable for documents WILL NOT WORK on Vercel.
+// Every time your serverless function sleeps, this array will be erased.
+// This is a TEMPORARY fix to get uploads working.
+// You MUST replace this with a real database (like Supabase).
+let documents = []; // [!code ++]
+console.log('Warning: Using in-memory document store. Data will not persist.'); // [!code ++]
+setDocumentsStore(documents); // [!code ++]
+// =================================================================
 
 
 // Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = './uploads';
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error, null);
-    }
-  },
-  filename: (req, file, cb) => {
-    try {
-      const sanitizedName = sanitizeFilename(file.originalname);
-      const ext = validateFileExtension(sanitizedName, ['.pdf', '.docx', '.txt', '.pptx']);
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + sanitizedName);
-    } catch (error) {
-      cb(error);
-    }
-  }
-});
+// [!code --] const storage = multer.diskStorage({ ... });
+// We use memoryStorage() to hold the file in RAM, not on disk
+const storage = multer.memoryStorage(); // [!code ++]
 
 const upload = multer({
-  storage: storage,
+  storage: storage, // [!code ++]
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['.pdf', '.docx', '.txt', '.pptx'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedTypes.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only PDF, DOCX, TXT, PPTX allowed.'));
-    }
+    // We sanitize and validate the extension from originalname
+    try { // [!code ++]
+      const sanitizedName = sanitizeFilename(file.originalname); // [!code ++]
+      const ext = validateFileExtension(sanitizedName, allowedTypes); // [!code ++]
+      if (ext) { // [!code ++]
+        cb(null, true); // [!code ++]
+      } else { // [!code ++]
+        cb(new Error('Invalid file type.')); // [!code ++]
+      } // [!code ++]
+    } catch (error) { // [!code ++]
+      cb(error); // [!code ++]
+    } // [!code ++]
   }
 });
 
@@ -93,19 +77,19 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       userId: userId, // Associate document with user
       name: req.file.originalname,
       size: formatFileSize(req.file.size),
-      path: req.file.path,
+      // [!code --] path: req.file.path, // We no longer have a local path
       uploaded: new Date().toISOString(),
       status: 'processing',
       type: path.extname(req.file.originalname).toLowerCase()
     };
 
-    // Process file and extract text (SAME - for AI)
-    const extractedText = await extractTextFromFile(req.file.path, fileInfo.type);
+    // Process file and extract text (from buffer)
+    const extractedText = await extractTextFromFile(req.file.buffer, fileInfo.type); // [!code ++]
     fileInfo.pages = Math.ceil(extractedText.length / 3000);
     fileInfo.textContent = extractedText; // KEEPS AI WORKING 100%
 
-    // Upload to R2 (NEW)
-    const r2Result = await uploadToR2(req.file.path, req.file.originalname);
+    // Upload to R2 (from buffer)
+    const r2Result = await uploadToR2(req.file.buffer, req.file.originalname); // [!code ++]
     
     if (r2Result.success) {
       fileInfo.r2Url = r2Result.publicUrl;
@@ -113,15 +97,17 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       fileInfo.storageType = 'r2';
       console.log('✅ Document stored in R2:', r2Result.publicUrl);
     } else {
-      fileInfo.storageType = 'local';
-      console.log('⚠️ R2 failed, using local storage');
+      // This case should probably throw an error, as local storage isn't an option
+      // [!code --] fileInfo.storageType = 'local';
+      // [!code --] console.log('⚠️ R2 failed, using local storage');
+      throw new Error('R2 upload failed, and local storage is not supported.'); // [!code ++]
     }
 
     fileInfo.status = 'processed';
     documents.push(fileInfo);
     
     // Save to file and update chat store
-    await saveDocuments();
+    // [!code --] await saveDocuments(); // We cannot save to a JSON file
     setDocumentsStore(documents);
 
     res.json({
@@ -191,20 +177,20 @@ router.delete('/:id', async (req, res) => {
       await deleteFromR2(docToDelete.r2FileName);
     }
     
-    // Validate local file path before deletion
-    if (docToDelete.path) {
-      try {
-        const validatedPath = validatePath(docToDelete.path, './uploads');
-        await fs.unlink(validatedPath).catch(() => {});
-      } catch (pathError) {
-        console.error('Path validation error:', pathError.message);
-      }
-    }
+    // [!code --] // Validate local file path before deletion
+    // [!code --] if (docToDelete.path) {
+    // [!code --]  try {
+    // [!code --]    const validatedPath = validatePath(docToDelete.path, './uploads');
+    // [!code --]    await fs.unlink(validatedPath).catch(() => {});
+    // [!code --]  } catch (pathError) {
+    // [!code --]    console.error('Path validation error:', pathError.message);
+    // [!code --]  }
+    // [!code --] }
     
     documents = documents.filter(doc => doc.id.toString() !== id);
     
     // Save to file and update chat store
-    await saveDocuments();
+    // [!code --] await saveDocuments(); // Cannot save to JSON file
     setDocumentsStore(documents);
     
     res.json({ message: 'Document deleted successfully' });
@@ -214,19 +200,23 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-async function extractTextFromFile(filePath, fileType) {
+// [!code --] async function extractTextFromFile(filePath, fileType) {
+async function extractTextFromFile(fileBuffer, fileType) { // [!code ++]
   try {
     if (fileType === '.pdf') {
-      const dataBuffer = await fs.readFile(filePath);
-      const data = await pdfParse(dataBuffer);
+      // [!code --] const dataBuffer = await fs.readFile(filePath);
+      const data = await pdfParse(fileBuffer); // [!code ++]
       return data.text;
     } else if (fileType === '.docx') {
-      const result = await mammoth.extractRawText({ path: filePath });
+      // [!code --] const result = await mammoth.extractRawText({ path: filePath });
+      const result = await mammoth.extractRawText({ buffer: fileBuffer }); // [!code ++]
       return result.value;
     } else if (fileType === '.txt') {
-      return await fs.readFile(filePath, 'utf-8');
+      // [!code --] return await fs.readFile(filePath, 'utf-8');
+      return fileBuffer.toString('utf-8'); // [!code ++]
     } else if (fileType === '.pptx') {
-      const directory = await unzipper.Open.file(filePath);
+      // [!code --] const directory = await unzipper.Open.file(filePath);
+      const directory = await unzipper.Open.buffer(fileBuffer); // [!code ++]
       let text = '';
       for (const file of directory.files) {
         if (file.path.startsWith('ppt/slides/') && file.path.endsWith('.xml')) {
