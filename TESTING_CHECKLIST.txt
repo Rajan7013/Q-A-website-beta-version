@@ -1,0 +1,112 @@
+🚀 PRODUCTION TESTING CHECKLIST
+================================
+
+STEP 1: Install Frontend Dependencies
+--------------------------------------
+cd frontend
+npm install
+
+Expected packages:
+✅ @clerk/clerk-react@^4.30.0
+✅ react-router-dom@^6.20.0
+✅ axios@^1.6.0
+
+
+STEP 2: Install Backend Dependencies
+-------------------------------------
+cd backend-unified
+npm install
+
+Expected packages:
+✅ @clerk/clerk-sdk-node@^4.13.11
+✅ @aws-sdk/client-s3@^3.451.0
+✅ @supabase/supabase-js@^2.38.4
+✅ express-rate-limit@^7.1.5
+✅ helmet@^7.1.0
+
+
+STEP 3: Verify Environment Variables
+-------------------------------------
+Backend (.env):
+✅ CLERK_SECRET_KEY=sk_test_...
+✅ GEMINI_API_KEY=AIza...
+✅ SUPABASE_URL=https://dtgupzdmacgaaedhobhx.supabase.co
+✅ SUPABASE_SERVICE_KEY=eyJh...
+✅ R2_ACCOUNT_ID=56f09b52a57631e741676ed3aa16834f
+✅ R2_ACCESS_KEY_ID=7fcba0e87e9e21b2af9f4084025ae5a9
+✅ R2_SECRET_ACCESS_KEY=e7a750d50c11077b4c92bcf56144dec4ae164c44de73653dfc03eabf2c6ac623
+
+Frontend (.env):
+✅ VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+✅ VITE_API_URL=http://localhost:5000/api
+
+
+STEP 4: Start Backend
+---------------------
+cd backend-unified
+npm run dev
+
+Expected output:
+✅ Server running on port 5000
+✅ CORS enabled for: http://localhost:5173
+✅ Gemini API: Configured ✓
+
+
+STEP 5: Start Frontend (NEW TERMINAL)
+--------------------------------------
+cd frontend
+npm run dev
+
+Expected output:
+✅ VITE ready
+✅ Local: http://localhost:5173
+
+
+STEP 6: Test Upload Flow
+-------------------------
+1. Open http://localhost:5173
+2. Sign in with Clerk
+3. Go to /upload
+4. Select a file (PDF, DOCX, PPTX, or TXT)
+5. Check browser console for:
+   ✅ Clerk token added to request
+   📤 Starting upload: filename.pdf
+   ✅ Upload successful
+
+6. Check backend logs for:
+   ✅ File uploaded to R2
+   ✅ Document created
+   ✅ Document uploaded and indexed
+
+
+STEP 7: Verify in Cloudflare R2
+--------------------------------
+1. Go to Cloudflare Dashboard
+2. R2 > ai-doc-analyzer bucket
+3. Should see: {userId}/{timestamp}-{random}-{filename}
+
+
+STEP 8: Verify in Supabase
+---------------------------
+1. Go to Supabase Dashboard
+2. Table Editor > documents
+3. Should see new row with file metadata
+
+
+TROUBLESHOOTING
+===============
+
+Error: "Clerk token getter not set"
+Fix: Restart frontend, make sure you're signed in
+
+Error: "Unauthorized"
+Fix: Check CLERK_SECRET_KEY in backend .env
+
+Error: "Failed to upload file to R2"
+Fix: Check R2 credentials in backend .env
+
+Error: "address already in use"
+Fix: Backend already running (this is OK!)
+
+Error: Network error
+Fix: Make sure both frontend AND backend are running

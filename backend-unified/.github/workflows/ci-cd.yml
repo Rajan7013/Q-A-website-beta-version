@@ -1,0 +1,150 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run ESLint
+        run: npm run lint || echo "Linting completed with warnings"
+      
+      - name: Run Tests
+        run: npm test
+        env:
+          NODE_ENV: test
+      
+      - name: Generate Coverage Report
+        run: npm run test:coverage
+      
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Run npm audit
+        run: npm audit --production || true
+      
+      - name: Check for secrets in code
+        run: |
+          if grep -r "sk_live_" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "Found live secret keys in code!"
+            exit 1
+          fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        run: npm ci --production
+      
+      - name: Create production artifact
+        run: |
+          mkdir -p dist
+          cp -r src dist/
+          cp package.json dist/
+          cp package-lock.json dist/
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: production-files
+          path: dist/
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    needs: build
+    environment: staging
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: dist/
+      
+      - name: Deploy to Staging (Render)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
+        run: |
+          echo "Deploying to staging..."
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json"
+
+  deploy-production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: production-files
+          path: dist/
+      
+      - name: Deploy to Production (Render)
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}
+        run: |
+          echo "Deploying to production..."
+          curl -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json"
+      
+      - name: Run smoke tests
+        env:
+          API_URL: ${{ secrets.PRODUCTION_API_URL }}
+        run: |
+          sleep 30
+          response=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/health)
+          if [ $response -eq 200 ]; then
+            echo "Health check passed"
+          else
+            echo "Health check failed with status $response"
+            exit 1
+          fi

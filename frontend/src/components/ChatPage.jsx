@@ -19,7 +19,7 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
   const [chatContext, setChatContext] = useState({
     topic: null,
     intent: null
-  });
+  } || {});
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(settings?.language || 'en');
@@ -63,53 +63,96 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
   }, [chatMessages]);
 
   // Text-to-Speech functions
+  const detectLanguageFromText = (text) => {
+    // Detect language from text content
+    const hindiPattern = /[\u0900-\u097F]/;
+    const teluguPattern = /[\u0C00-\u0C7F]/;
+    const tamilPattern = /[\u0B80-\u0BFF]/;
+    const malayalamPattern = /[\u0D00-\u0D7F]/;
+    const bengaliPattern = /[\u0980-\u09FF]/;
+    const nepaliPattern = /[\u0900-\u097F]/; // Uses Devanagari like Hindi
+    
+    if (hindiPattern.test(text)) return 'hi';
+    if (teluguPattern.test(text)) return 'te';
+    if (tamilPattern.test(text)) return 'ta';
+    if (malayalamPattern.test(text)) return 'ml';
+    if (bengaliPattern.test(text)) return 'bn';
+    if (nepaliPattern.test(text)) return 'ne';
+    
+    return settings?.language || 'en';  // Fallback to user's selected language
+  };
+
   const getIndianFemaleVoice = (language) => {
     const voices = window.speechSynthesis.getVoices();
     
+    if (voices.length === 0) {
+      // Voices not loaded yet, try again after a delay
+      console.warn('\ud83d� Voices not loaded yet, using default');
+      return null;
+    }
+    
     // Language code mapping for speech synthesis
     const langCodeMap = {
-      'en': 'en-IN',
-      'hi': 'hi-IN',
-      'te': 'te-IN',
-      'ta': 'ta-IN',
-      'ml': 'ml-IN',
-      'bn': 'bn-IN',
-      'ne': 'ne-NP',
-      'mai': 'hi-IN' // Fallback to Hindi for Maithili
+      'en': ['en-IN', 'en-US', 'en-GB'],
+      'hi': ['hi-IN', 'hi'],
+      'te': ['te-IN', 'te'],
+      'ta': ['ta-IN', 'ta'],
+      'ml': ['ml-IN', 'ml'],
+      'bn': ['bn-IN', 'bn-BD', 'bn'],
+      'ne': ['ne-NP', 'ne'],
+      'mai': ['hi-IN', 'hi'] // Maithili uses Hindi voice
     };
     
-    const langCode = langCodeMap[language] || 'en-IN';
+    const langCodes = langCodeMap[language] || ['en-IN'];
     
-    // Try to find Indian female voice for the language
-    let voice = voices.find(v => 
-      v.lang.startsWith(langCode.split('-')[0]) && 
-      v.name.toLowerCase().includes('female')
-    );
+    console.log('\ud83c\udf99\ufe0f Searching voice for:', language, 'codes:', langCodes);
+    console.log('\ud83d� Available voices:', voices.map(v => `${v.name} (${v.lang})`));
     
-    // Fallback to any Indian voice
-    if (!voice) {
-      voice = voices.find(v => v.lang.startsWith(langCode.split('-')[0]));
-    }
-    
-    // Fallback to Indian English female voice
-    if (!voice) {
-      voice = voices.find(v => 
-        v.lang.includes('IN') && 
-        v.name.toLowerCase().includes('female')
+    // Priority 1: Exact language match with female voice
+    for (const code of langCodes) {
+      const voice = voices.find(v => 
+        v.lang.toLowerCase() === code.toLowerCase() && 
+        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('woman'))
       );
+      if (voice) {
+        console.log('\u2705 Found female voice:', voice.name, voice.lang);
+        return voice;
+      }
     }
     
-    // Final fallback to any Indian voice
-    if (!voice) {
-      voice = voices.find(v => v.lang.includes('IN'));
+    // Priority 2: Language prefix match (any gender)
+    for (const code of langCodes) {
+      const voice = voices.find(v => 
+        v.lang.toLowerCase().startsWith(code.split('-')[0])
+      );
+      if (voice) {
+        console.log('\u2705 Found language voice:', voice.name, voice.lang);
+        return voice;
+      }
     }
     
-    // Last resort: any female voice
-    if (!voice) {
-      voice = voices.find(v => v.name.toLowerCase().includes('female'));
+    // Priority 3: Google voices (they support many languages)
+    for (const code of langCodes) {
+      const voice = voices.find(v => 
+        v.name.toLowerCase().includes('google') &&
+        v.lang.toLowerCase().startsWith(code.split('-')[0])
+      );
+      if (voice) {
+        console.log('\u2705 Found Google voice:', voice.name, voice.lang);
+        return voice;
+      }
     }
     
-    return voice || voices[0];
+    // Priority 4: Any Indian voice as fallback
+    const indianVoice = voices.find(v => v.lang.includes('IN'));
+    if (indianVoice) {
+      console.log('\u26a0\ufe0f Using Indian fallback voice:', indianVoice.name, indianVoice.lang);
+      return indianVoice;
+    }
+    
+    // Priority 5: Default voice
+    console.log('\u26a0\ufe0f Using default voice:', voices[0]?.name, voices[0]?.lang);
+    return voices[0];
   };
 
   const stripMarkdown = (text) => {
@@ -144,16 +187,38 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
     // Clean text from markdown
     const cleanText = stripMarkdown(text);
     
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    const language = settings?.language || 'en';
-    const voice = getIndianFemaleVoice(language);
+    // Detect language from text content (auto-detect)
+    const detectedLanguage = detectLanguageFromText(cleanText);
+    console.log('\ud83c\udf10 Detected language from text:', detectedLanguage);
     
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Try to load voices if not loaded yet
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      // Wait for voices to load
+      window.speechSynthesis.onvoiceschanged = () => {
+        const voice = getIndianFemaleVoice(detectedLanguage);
+        if (voice) {
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
+        }
+        window.speechSynthesis.speak(utterance);
+      };
+      // Trigger voice loading
+      window.speechSynthesis.getVoices();
+    } else {
+      const voice = getIndianFemaleVoice(detectedLanguage);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+        console.log('\ud83d� Using voice:', voice.name, 'for language:', voice.lang);
+      } else {
+        console.warn('\u26a0\ufe0f No voice found, using default');
+      }
     }
     
-    // Speech parameters for natural Indian accent
+    // Speech parameters for natural accent
     utterance.rate = 0.9; // Slightly slower for clarity
     utterance.pitch = 1.1; // Slightly higher for female voice
     utterance.volume = 1.0;
@@ -161,20 +226,27 @@ const ChatPage = ({ sessionId, uploadedDocs, userId, setStats, settings }) => {
     utterance.onstart = () => {
       setSpeakingMessageId(messageId);
       setIsPaused(false);
+      console.log('\u25b6\ufe0f Speech started in language:', utterance.lang);
     };
     
     utterance.onend = () => {
       setSpeakingMessageId(null);
       setIsPaused(false);
+      console.log('\u23f9\ufe0f Speech ended');
     };
     
-    utterance.onerror = () => {
+    utterance.onerror = (error) => {
       setSpeakingMessageId(null);
       setIsPaused(false);
+      console.error('\u274c Speech error:', error);
     };
     
     speechSynthesisRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    
+    // Speak if voices are already loaded
+    if (voices.length > 0) {
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const pauseSpeech = () => {
@@ -319,7 +391,7 @@ ${'═'.repeat(70)}
     const chatText = chatMessages
       .map((msg, index) => {
         const sender = msg.type === 'user' ? '👤 YOU' : '🤖 AI ASSISTANT';
-        const sources = msg.sources?.length > 0 ? `\n\n📚 Sources: ${msg.sources.join(', ')}` : '';
+        const sources = msg.sources?.length > 0 ? `\n\n📚 Sources: ${msg.sources.map(s => typeof s === 'object' ? `Page ${s.page}` : s).join(', ')}` : '';
         const separator = '─'.repeat(70);
         
         return `
@@ -628,7 +700,7 @@ Exported on: ${new Date().toLocaleString()}
       </div>
       ${msg.sources?.length > 0 ? `
         <div class="sources">
-          <strong>📚 Sources:</strong> ${msg.sources.join(', ')}
+          <strong>📚 Sources:</strong> ${msg.sources.map(s => typeof s === 'object' ? `Page ${s.page}` : s).join(', ')}
         </div>
       ` : ''}
     </div>
@@ -791,7 +863,7 @@ Exported on: ${new Date().toLocaleString()}
     ];
     
     // Context-based suggestions
-    if (chatContext.topic) {
+    if (chatContext?.topic) {
       suggestions.unshift(`Tell me more about ${chatContext.topic}`);
       suggestions.push(`Give me examples related to ${chatContext.topic}`);
     }
@@ -939,7 +1011,7 @@ Exported on: ${new Date().toLocaleString()}
     const chatText = chatMessages
       .map(msg => {
         const sender = msg.type === 'user' ? 'You' : 'AI';
-        return `${sender} (${msg.time}):\n${msg.text}\n${msg.sources?.length > 0 ? 'Sources: ' + msg.sources.join(', ') : ''}`;
+        return `${sender} (${msg.time}):\n${msg.text}\n${msg.sources?.length > 0 ? 'Sources: ' + msg.sources.map(s => typeof s === 'object' ? `Page ${s.page}` : s).join(', ') : ''}`;
       })
       .join('\n\n---\n\n');
     
@@ -987,13 +1059,22 @@ Exported on: ${new Date().toLocaleString()}
       );
 
       const botMessage = {
-        id: chatMessages.length + 2,
+        id: Date.now() + 1,
         type: 'bot',
-        text: response.response,
+        text: response.message || response.response,
         rawText: response.rawResponse,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sources: response.sources || []
+        sources: response.sources || [],
+        confidence: response.confidence,
+        metadata: response.metadata || {}
       };
+
+      // Debug: Check if sources are received
+      if (response.sources && response.sources.length > 0) {
+        console.log('📄 Sources received:', response.sources);
+      } else {
+        console.log('⚠️ No sources in response');
+      }
 
       setChatMessages(prev => [...prev, botMessage]);
       setChatContext(response.context);
@@ -1052,11 +1133,11 @@ Exported on: ${new Date().toLocaleString()}
             h5: ({node, ...props}) => <h5 className="text-base font-bold mb-2 mt-3 text-purple-500" {...props} />,
             h6: ({node, ...props}) => <h6 className="text-sm font-bold mb-2 mt-2 text-purple-500" {...props} />,
             
-            // Paragraphs with spacing
-            p: ({node, ...props}) => <p className="mb-4 leading-relaxed text-gray-200" {...props} />,
+            // Paragraphs with spacing - larger font like Claude
+            p: ({node, ...props}) => <p className="mb-4 leading-relaxed text-gray-100 text-base" {...props} />,
             
-            // Bold text
-            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />,
+            // Bold text - prominent like Claude
+            strong: ({node, ...props}) => <strong className="font-semibold text-white" {...props} />,
             
             // Italic text
             em: ({node, ...props}) => <em className="italic text-gray-300" {...props} />,
@@ -1067,11 +1148,11 @@ Exported on: ${new Date().toLocaleString()}
             // Ordered lists
             ol: ({node, ...props}) => <ol className="list-none space-y-2 mb-4 ml-2" {...props} />,
             
-            // List items with custom bullets
-            li: ({node, ordered, ...props}) => (
-              <li className="flex items-start gap-2" {...props}>
-                <span className="text-purple-400 font-bold mt-0.5">{ordered ? '•' : '•'}</span>
-                <span className="flex-1">{props.children}</span>
+            // List items with custom bullets - clean like Claude
+            li: ({node, ordered, index, ...props}) => (
+              <li className="flex items-start gap-3 text-gray-100" {...props}>
+                <span className="text-gray-400 font-normal mt-1 select-none">{ordered ? '•' : '•'}</span>
+                <span className="flex-1 leading-relaxed">{props.children}</span>
               </li>
             ),
             
@@ -1110,14 +1191,14 @@ Exported on: ${new Date().toLocaleString()}
     <div className="flex flex-col h-[calc(100vh-80px)] md:h-[calc(100vh-120px)] bg-gradient-to-br from-gray-900 to-black rounded-none md:rounded-2xl shadow-2xl overflow-hidden">
 
       {/* Context Info */}
-      {chatContext.topic && (
+      {chatContext?.topic && (
         <div className="p-2 sm:p-3 bg-white/5 text-center text-xs sm:text-sm text-gray-300">
           <div className="flex items-center justify-center space-x-2 sm:space-x-4 flex-wrap">
             <Target className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
             <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
               <span className="font-bold">Context: </span>
-              <span className="text-purple-300">{chatContext.topic}</span>
-              {chatContext.intent && (
+              <span className="text-purple-300">{chatContext?.topic}</span>
+              {chatContext?.intent && (
                 <>
                   <span className="hidden sm:inline">•</span>
                   <span className="font-bold">Intent: </span>
@@ -1309,11 +1390,12 @@ Exported on: ${new Date().toLocaleString()}
                   : renderMessage(msg.text)
                 }
               </div>
-              <div className="text-[10px] sm:text-xs text-gray-400 mt-2 sm:mt-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-1 sm:gap-2">
-                <div className="flex items-center gap-2">
-                  <span>{msg.time}</span>
-                  {msg.type === 'bot' && (
-                    <div className="flex items-center gap-1">
+              <div className="text-[10px] sm:text-xs text-gray-400 mt-2 sm:mt-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span>{msg.time}</span>
+                    {msg.type === 'bot' && (
+                      <div className="flex items-center gap-1">
                       {/* Pin/Unpin Button */}
                       <button
                         onClick={() => togglePinMessage(msg.id)}
@@ -1369,18 +1451,121 @@ Exported on: ${new Date().toLocaleString()}
                           <Volume2 className="w-4 h-4 text-blue-400 hover:text-blue-300" />
                         </button>
                       )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* AI Metadata Badges */}
+                  {msg.type === 'bot' && msg.metadata && (
+                    <div className="flex items-center gap-2 flex-wrap mt-2">
+                      {/* Classification Badge */}
+                      {msg.metadata.classification && (
+                        <span className="bg-blue-900/40 border border-blue-600/50 text-blue-300 px-2 py-0.5 rounded-full font-medium text-[10px] sm:text-xs flex items-center gap-1">
+                          <span className="text-xs">🎯</span>
+                          <span className="capitalize">{msg.metadata.classification.replace('_', ' ')}</span>
+                        </span>
+                      )}
+                      
+                      {/* Search Strategy Badge */}
+                      {msg.metadata.searchStrategy && (
+                        <span className="bg-green-900/40 border border-green-600/50 text-green-300 px-2 py-0.5 rounded-full font-medium text-[10px] sm:text-xs flex items-center gap-1">
+                          <span className="text-xs">🔍</span>
+                          <span className="capitalize">{msg.metadata.searchStrategy.replace('_', ' ')}</span>
+                        </span>
+                      )}
+                      
+                      {/* Hybrid Search Badge */}
+                      {msg.metadata.usedHybridSearch && (
+                        <span className="bg-purple-900/40 border border-purple-600/50 text-purple-300 px-2 py-0.5 rounded-full font-medium text-[10px] sm:text-xs flex items-center gap-1">
+                          <span className="text-xs">⚡</span>
+                          <span>Hybrid Search</span>
+                        </span>
+                      )}
+                      
+                      {/* Results Count */}
+                      {msg.metadata.resultsFound !== undefined && (
+                        <span className="bg-gray-800/60 border border-gray-600/50 text-gray-300 px-2 py-0.5 rounded-full font-medium text-[10px] sm:text-xs flex items-center gap-1">
+                          <span className="text-xs">📊</span>
+                          <span>{msg.metadata.resultsFound} results</span>
+                        </span>
+                      )}
+                      
+                      {/* Confidence Score */}
+                      {msg.confidence && (
+                        <span className={`px-2 py-0.5 rounded-full font-medium text-[10px] sm:text-xs flex items-center gap-1 ${
+                          msg.confidence >= 0.8 ? 'bg-emerald-900/40 border border-emerald-600/50 text-emerald-300' :
+                          msg.confidence >= 0.6 ? 'bg-yellow-900/40 border border-yellow-600/50 text-yellow-300' :
+                          'bg-orange-900/40 border border-orange-600/50 text-orange-300'
+                        }`}>
+                          <span className="text-xs">📈</span>
+                          <span>{Math.round(msg.confidence * 100)}% confident</span>
+                        </span>
+                      )}
                     </div>
                   )}
+                  
+                  {/* Document sources with enhanced information */}
+                  {msg.type === 'bot' && msg.sources && msg.sources.length > 0 && (() => {
+                    // Group sources by document name
+                    const groupedSources = {};
+                    msg.sources.forEach(source => {
+                      if (typeof source === 'object') {
+                        const docName = source.documentName || 'Document';
+                        if (!groupedSources[docName]) {
+                          groupedSources[docName] = [];
+                        }
+                        groupedSources[docName].push(source);
+                      }
+                    });
+                    
+                    return (
+                      <div className="mt-2 space-y-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <FileCheck className="w-3 h-3 sm:w-4 sm:h-4 text-purple-400" />
+                          <span className="font-semibold text-purple-400 text-xs sm:text-sm">Sources:</span>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          {Object.entries(groupedSources).map(([docName, sources], idx) => (
+                            <div key={idx} className="bg-purple-900/20 border border-purple-600/30 rounded-lg p-2">
+                              <div className="flex items-start gap-2 flex-wrap">
+                                <span className="opacity-75 text-lg">📄</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-purple-300 text-xs sm:text-sm truncate">{docName}</div>
+                                  <div className="flex flex-wrap gap-1.5 mt-1">
+                                    {sources.slice(0, 5).map((source, sIdx) => (
+                                      <span key={sIdx} className="bg-purple-900/40 border border-purple-600/50 text-purple-200 px-1.5 py-0.5 rounded text-[10px] sm:text-xs flex items-center gap-1">
+                                        <span>Page {source.page}</span>
+                                        {source.relevance !== undefined && (
+                                          <span className="opacity-60" title="Relevance Score">
+                                            ({Math.round(source.relevance * 100)}%)
+                                          </span>
+                                        )}
+                                      </span>
+                                    ))}
+                                    {sources.length > 5 && (
+                                      <span className="text-purple-400 text-[10px] sm:text-xs opacity-75">+{sources.length - 5} more</span>
+                                    )}
+                                  </div>
+                                  {/* Show keyword vs semantic scores for first source */}
+                                  {msg.metadata?.usedHybridSearch && sources[0]?.keywordScore !== undefined && sources[0]?.semanticScore !== undefined && (
+                                    <div className="mt-1.5 flex gap-2 text-[9px] sm:text-[10px]">
+                                      <span className="text-blue-400 opacity-75" title="Keyword Match Score">
+                                        🔤 {Math.round(sources[0].keywordScore * 100)}%
+                                      </span>
+                                      <span className="text-cyan-400 opacity-75" title="Semantic Similarity Score">
+                                        🧠 {Math.round(sources[0].semanticScore * 100)}%
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
-                {msg.sources && msg.sources.length > 0 && (
-                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                    <FileCheck className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="font-bold text-[10px] sm:text-xs">Sources:</span>
-                    {msg.sources.map((source, idx) => (
-                      <span key={idx} className="bg-gray-700 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-[9px] sm:text-xs">{source}</span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>

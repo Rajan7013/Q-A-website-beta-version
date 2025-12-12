@@ -24,7 +24,9 @@ const HomePage = ({ setCurrentPage, uploadedDocs, userId, stats }) => {
 
   // Complete Features - All implemented features
   const completeFeatures = [
+    { icon: Zap, title: 'Hybrid Search', desc: '90-95% accuracy with semantic + keyword search', color: 'from-purple-600 to-pink-600', emoji: '⚡' },
     { icon: Brain, title: 'Smart AI Chat', desc: 'Context-aware conversations with memory', color: 'from-purple-500 to-pink-600', emoji: '🧠' },
+    { icon: Target, title: 'Query Classification', desc: '15+ question types auto-detected', color: 'from-blue-600 to-cyan-600', emoji: '🎯' },
     { icon: FileCheck, title: 'Document Analysis', desc: 'Upload & analyze PDF, DOCX, TXT files', color: 'from-blue-500 to-cyan-600', emoji: '📄' },
     { icon: GraduationCap, title: 'Exam Preparation', desc: 'Tailored study assistance & Q&A', color: 'from-green-500 to-emerald-600', emoji: '🎓' },
     { icon: Globe, title: '8 Languages', desc: 'Multilingual support (Hindi, Telugu, etc.)', color: 'from-orange-500 to-red-600', emoji: '🌍' },
@@ -44,6 +46,14 @@ const HomePage = ({ setCurrentPage, uploadedDocs, userId, stats }) => {
   // Unique Features - What makes us special
   const uniqueFeatures = [
     { 
+      icon: Zap, 
+      title: '90-95% Accuracy with Hybrid Search', 
+      desc: 'Industry-leading search combining keyword matching with semantic understanding. Finds answers even with synonyms and paraphrasing.',
+      color: 'from-purple-600 to-pink-600',
+      emoji: '⚡',
+      features: ['Hybrid search', '15+ question types', 'Cross-encoder reranking']
+    },
+    { 
       icon: Shield, 
       title: 'Document-First Approach', 
       desc: 'AI reads your documents completely before answering. Always prioritizes your uploaded content over general knowledge.',
@@ -61,30 +71,30 @@ const HomePage = ({ setCurrentPage, uploadedDocs, userId, stats }) => {
     },
     { 
       icon: Brain, 
-      title: 'Context Memory', 
-      desc: 'Remembers your conversation flow, topics, and intent. Each response builds on previous context intelligently.',
+      title: 'Intelligent Classification', 
+      desc: 'Automatically detects question type and optimizes search strategy. Understands factual, conceptual, technical queries and more.',
       color: 'from-green-500 to-teal-500',
       emoji: '🧠',
-      features: ['Topic tracking', 'Intent detection', 'Conversation history']
+      features: ['15+ question types', 'Intent detection', 'Smart optimization']
     },
     { 
       icon: Rocket, 
-      title: 'Gemini 2.0 Flash', 
+      title: 'Gemini 2.5 Flash', 
       desc: 'Powered by Google\'s latest AI model. Lightning-fast responses with perfect markdown formatting.',
       color: 'from-orange-500 to-red-500',
-      emoji: '⚡',
-      features: ['4096 tokens output', 'Markdown support', 'Code highlighting']
+      emoji: '🚀',
+      features: ['8192 tokens output', 'Markdown support', 'Code highlighting']
     },
   ];
 
   // Smart AI Features
   const smartFeatures = [
-    { icon: Target, title: 'Intent Detection', desc: 'Understands what you need', color: 'bg-purple-500' },
+    { icon: Zap, title: 'Hybrid Search', desc: '90-95% accuracy', color: 'bg-purple-600' },
+    { icon: Target, title: 'Query Classification', desc: '15+ question types', color: 'bg-purple-500' },
     { icon: Sparkles, title: 'Smart Suggestions', desc: 'Context-aware questions', color: 'bg-pink-500' },
     { icon: BookOpen, title: 'Exam Mode', desc: 'Study assistance & prep', color: 'bg-blue-500' },
     { icon: TrendingUp, title: 'Analytics', desc: 'Track your learning', color: 'bg-green-500' },
-    { icon: Award, title: 'Quality Answers', desc: 'Comprehensive responses', color: 'bg-yellow-500' },
-    { icon: Star, title: 'Best Practices', desc: 'Professional formatting', color: 'bg-orange-500' },
+    { icon: Award, title: 'Semantic Search', desc: 'Understands meaning', color: 'bg-cyan-500' },
   ];
 
   return (

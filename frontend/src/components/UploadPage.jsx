@@ -21,8 +21,9 @@ const UploadPage = ({ onDocumentUpload }) => {
       onDocumentUpload(result.document);
       alert('Document uploaded successfully!');
     } catch (error) {
-      alert('Failed to upload document. Please try again.');
-      console.error(error);
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      alert(`Upload failed: ${errorMsg}`);
+      console.error('Upload error:', error.response || error);
     } finally {
       setUploading(false);
       setUploadProgress(0);

@@ -1,0 +1,17 @@
+{
+    "name": "AI Doc Analyzer",
+    "short_name": "DocAI",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1f2937",
+    "theme_color": "#1f2937",
+    "description": "Advanced AI Document Analysis and Q&A System",
+    "icons": [
+        {
+            "src": "/pwa-icon.png",
+            "sizes": "192x192 512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

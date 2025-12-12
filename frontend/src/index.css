@@ -181,8 +181,10 @@ body {
 
 /* Markdown content styling - Clean, professional, Claude-like formatting */
 .markdown-content {
-  line-height: 1.7;
+  font-size: 16px;        /* Larger base font like Claude */
+  line-height: 1.8;       /* More spacing like Claude */
   color: #e5e7eb;
+  letter-spacing: 0.01em; /* Slight letter spacing for readability */
 }
 
 /* Ensure proper spacing between all elements */
@@ -229,21 +231,23 @@ body {
   color: #d8b4fe;
 }
 
-/* Paragraphs - Proper spacing and readability */
+/* Paragraphs - Proper spacing and readability like Claude */
 .markdown-content p {
-  margin-bottom: 1rem;
-  line-height: 1.75;
+  margin-bottom: 1.25rem;  /* More space between paragraphs */
+  line-height: 1.8;
+  font-size: 16px;
 }
 
 .markdown-content p:last-child {
   margin-bottom: 0;
 }
 
-/* Lists - Clean and well-spaced */
+/* Lists - Clean and well-spaced like Claude */
 .markdown-content ul,
 .markdown-content ol {
-  margin-bottom: 1rem;
-  padding-left: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-left: 0;
+  list-style: none;
 }
 
 .markdown-content ul ul,
@@ -255,18 +259,20 @@ body {
 }
 
 .markdown-content li {
-  margin-bottom: 0.5rem;
-  line-height: 1.7;
+  margin-bottom: 0.75rem;  /* More space between list items */
+  line-height: 1.8;
+  font-size: 16px;
 }
 
 .markdown-content li:last-child {
   margin-bottom: 0;
 }
 
-/* Strong (bold) text - Prominent but not overwhelming */
+/* Strong (bold) text - Prominent like Claude */
 .markdown-content strong {
   font-weight: 600;
   color: #ffffff;
+  letter-spacing: -0.01em; /* Tighter for bold text */
 }
 
 /* Emphasis (italic) text */

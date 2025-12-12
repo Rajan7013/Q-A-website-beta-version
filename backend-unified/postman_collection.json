@@ -1,0 +1,196 @@
+{
+  "info": {
+    "name": "AI Document Analyzer API",
+    "description": "Production API endpoints for AI Document Analyzer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Get User Info",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "me"]
+        }
+      }
+    },
+    {
+      "name": "Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/document.pdf"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/upload",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "upload"]
+        }
+      }
+    },
+    {
+      "name": "Query Documents",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"What is this document about?\",\n  \"documentIds\": [\"uuid-here\"],\n  \"generatePdf\": false\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/query",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "query"]
+        }
+      }
+    },
+    {
+      "name": "Get Query History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/query/history?limit=50",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "query", "history"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "50"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Documents List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/doc",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "doc"]
+        }
+      }
+    },
+    {
+      "name": "Get Presigned Download URL",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/doc/:documentId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "doc", ":documentId"],
+          "variable": [
+            {
+              "key": "documentId",
+              "value": "document-uuid-here"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete Document",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/doc/:documentId",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "doc", ":documentId"],
+          "variable": [
+            {
+              "key": "documentId",
+              "value": "document-uuid-here"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "clerkToken",
+      "value": "your-clerk-session-token",
+      "type": "string"
+    }
+  ]
+}

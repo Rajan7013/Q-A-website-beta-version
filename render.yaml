@@ -1,0 +1,49 @@
+# Render Blueprint for Backend Deployment
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: ai-doc-analyzer-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend-unified && npm install
+    startCommand: cd backend-unified && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: question
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: MAX_FILE_SIZE_MB
+        value: 50
+      - key: ALLOWED_FILE_TYPES
+        value: pdf,docx,pptx,txt
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: LOG_LEVEL
+        value: info
