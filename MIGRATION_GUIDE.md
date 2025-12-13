@@ -105,7 +105,7 @@ Frontend will automatically connect to `http://localhost:5000/api`
 NODE_ENV=development
 PORT=5000
 FRONTEND_URL=http://localhost:5173
-GEMINI_API_KEY=AIzaSyA1_4PzYWWfIlLLnoXzW6_U-LcYEOXn6XQ
+GEMINI_API_KEY=[REDACTED_API_KEY]
 ```
 
 ### Frontend (.env in `frontend/`)

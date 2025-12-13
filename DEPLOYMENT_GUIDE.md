@@ -65,7 +65,7 @@ railway up
    
    Create `frontend/.env.production`:
    ```env
-   VITE_CLERK_PUBLISHABLE_KEY=pk_test_cGlja2VkLXNhd2ZseS04NS5jbGVyay5hY2NvdW50cy5kZXYk
+   VITE_CLERK_PUBLISHABLE_KEY=[REDACTED_PUBLIC_KEY]
    VITE_API_URL=https://[your-backend-url].onrender.com/api
    ```
 

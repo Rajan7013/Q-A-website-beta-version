@@ -29,7 +29,7 @@
 - **Access Key ID**: Configured
 - **Secret Access Key**: Configured (secret)
 - **Bucket Name**: ai-doc-analyzer
-- **S3 API URL**: https://56f09b52a57631e741676ed3aa16834f.r2.cloudflarestorage.com
+- **S3 API URL**: https://[REDACTED_ACCOUNT_ID].r2.cloudflarestorage.com
 - **Purpose**: File storage
 
 ---

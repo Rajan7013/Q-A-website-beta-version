@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { SignIn, SignUp, useUser, useAuth } from '@clerk/clerk-react';
+import { useUser, useAuth, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import ChatPage from './components/ChatPage';
@@ -9,6 +9,7 @@ import DocumentsPage from './components/DocumentsPage';
 import SettingsPage from './components/SettingsPage';
 import ProfilePage from './components/ProfilePage';
 import InstallPrompt from './components/InstallPrompt';
+import LoginPage from './components/LoginPage';
 import { getDocuments, getProfile, getSettings, getStats, incrementStat, unlockAchievement, setClerkTokenGetter } from './utils/api';
 
 function App() {
@@ -92,8 +93,11 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans flex items-center justify-center">
         <div className="max-w-md w-full p-8">
           <Routes>
-            <Route path="/sign-in/*" element={<SignIn routing="path" path="/sign-in" />} />
-            <Route path="/sign-up/*" element={<SignUp routing="path" path="/sign-up" />} />
+            <Route path="/sign-in" element={<LoginPage />} />
+            <Route
+              path="/sso-callback"
+              element={<AuthenticateWithRedirectCallback />}
+            />
             <Route path="*" element={<Navigate to="/sign-in" replace />} />
           </Routes>
         </div>

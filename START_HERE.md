@@ -104,7 +104,7 @@ Should return:
 ```env
 PORT=5000
 FRONTEND_URL=http://localhost:5173
-GEMINI_API_KEY=AIzaSyA1_4PzYWWfIlLLnoXzW6_U-LcYEOXn6XQ ✓
+GEMINI_API_KEY=[REDACTED_API_KEY] ✓
 ```
 
 ### Frontend (.env already configured)

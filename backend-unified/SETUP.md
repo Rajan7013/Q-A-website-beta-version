@@ -48,7 +48,7 @@ Edit `.env` file:
 ```env
 PORT=5000                                    # Backend port
 FRONTEND_URL=http://localhost:5173           # Frontend URL
-GEMINI_API_KEY=AIzaSyA1_4PzYWWfIlLLnoXzW6_U-LcYEOXn6XQ  # Your key
+GEMINI_API_KEY=[REDACTED_API_KEY]  # Your key
 ```
 
 ---
@@ -91,7 +91,7 @@ PORT=5001
 
 Check your API key in `.env`:
 ```env
-GEMINI_API_KEY=AIzaSyA1_4PzYWWfIlLLnoXzW6_U-LcYEOXn6XQ
+GEMINI_API_KEY=[REDACTED_API_KEY]
 ```
 
 ### Frontend Can't Connect
