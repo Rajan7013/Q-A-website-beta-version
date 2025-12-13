@@ -34,11 +34,10 @@ export default function Navbar() {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold transition-all ${
-                    currentPage === item.id
+                  className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-bold transition-all ${currentPage === item.id
                       ? 'bg-white text-purple-600 shadow-xl'
                       : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
+                    }`}
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="hidden lg:inline">{item.label}</span>
@@ -49,7 +48,9 @@ export default function Navbar() {
               <button onClick={() => navigate('/settings')} className="bg-white/20 hover:bg-white/30 text-white p-3 rounded-xl transition-all">
                 <Settings className="w-6 h-6" />
               </button>
-              <UserButton afterSignOutUrl="/sign-in" />
+              <div className="flex items-center gap-2 bg-white/10 p-1 rounded-xl">
+                <UserButton afterSignOutUrl="/sign-in" showName={true} />
+              </div>
             </div>
           </div>
         </div>
