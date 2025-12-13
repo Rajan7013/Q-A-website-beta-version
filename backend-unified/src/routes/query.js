@@ -38,12 +38,12 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
     // Skip for long queries (likely exact copies from documents)
     let preprocessed = null;
     let enhancedQuery = query;
-    
+
     if (query.length < 100) {
       logger.info('🔍 Preprocessing short query...', { query: query.substring(0, 100) });
       preprocessed = await preprocessQuery(query);
       enhancedQuery = buildEnhancedQuery(preprocessed);
-      
+
       logger.info('✅ Query enhanced', {
         original: query.substring(0, 50),
         enhanced: enhancedQuery.substring(0, 50),
@@ -62,8 +62,8 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
     // STEP 1: Analyze query intent & classification
     const classification = await analyzeQuery(enhancedQuery);
     const searchParams = getSearchParams(classification);
-    
-    logger.info('✅ Query classified', { 
+
+    logger.info('✅ Query classified', {
       type: classification.type,
       strategy: classification.searchStrategy
     });
@@ -71,22 +71,22 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
     // STEP 2: Generate multiple queries (BOOST RECALL BY 15-20%)
     logger.info('🔍 Generating multiple search queries...');
     const queries = await generateMultipleQueries(enhancedQuery);
-    
+
     // STEP 3: Generate embeddings for all queries
     const embeddingServiceHealthy = await embeddingClient.checkHealth();
     const queryEmbeddings = [];
-    
+
     if (embeddingServiceHealthy) {
       try {
         logger.info('🧮 Generating query embeddings...', { count: queries.length });
-        
+
         for (const q of queries) {
           const embedding = await embeddingClient.generateEmbedding(q);
           if (embedding && embedding.length === 768) {
             queryEmbeddings.push({ query: q, embedding });
           }
         }
-        
+
         logger.info('✅ Embeddings generated', { count: queryEmbeddings.length });
       } catch (error) {
         logger.warn('Embedding generation failed', { error: error.message });
@@ -97,16 +97,16 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
     let relevantPages = [];
     let sources = [];
     let confidence = 0.5;
-    
+
     if (queryEmbeddings.length > 0) {
       // Use hybrid search with MULTIPLE queries (BEST ACCURACY!)
-      logger.info('🔍 Multi-query hybrid search', { 
+      logger.info('🔍 Multi-query hybrid search', {
         queries: queryEmbeddings.length,
         documents: documentIds.length || 'all'
       });
-      
+
       const queryResults = [];
-      
+
       for (const { query: searchQuery, embedding } of queryEmbeddings) {
         try {
           if (documentIds && documentIds.length > 0) {
@@ -118,7 +118,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
               keyword_weight: searchParams.keywordWeight,
               semantic_weight: searchParams.semanticWeight
             });
-            
+
             if (!error && data) {
               queryResults.push(data);
             }
@@ -131,7 +131,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
               keyword_weight: searchParams.keywordWeight,
               semantic_weight: searchParams.semanticWeight
             });
-            
+
             if (!error && data) {
               queryResults.push(data);
             }
@@ -140,14 +140,14 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
           logger.warn('Query search failed', { query: searchQuery.substring(0, 30), error: error.message });
         }
       }
-      
+
       // Merge results from all queries (DEDUPLICATES & BOOSTS MULTI-MATCHES)
       if (queryResults.length > 0) {
         relevantPages = mergeMultiQueryResults(queryResults);
         logger.info('✅ Multi-query search complete', { totalResults: relevantPages.length });
       }
     }
-    
+
     // Fallback to keyword-only if no embeddings
     if (relevantPages.length === 0) {
       logger.info('📝 Fallback: keyword-only search');
@@ -166,11 +166,11 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
       const maxScore = Math.max(...scores);
       const minScore = Math.min(...scores);
       const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-      logger.debug('Score distribution', { 
-        max: maxScore.toFixed(4), 
-        min: minScore.toFixed(4), 
+      logger.debug('Score distribution', {
+        max: maxScore.toFixed(4),
+        min: minScore.toFixed(4),
         avg: avgScore.toFixed(4),
-        threshold: searchParams.minRelevanceScore 
+        threshold: searchParams.minRelevanceScore
       });
     }
 
@@ -180,7 +180,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
       const score = page.combined_score || page.rank || 0;
       return score >= MIN_COMBINED_SCORE;
     });
-    
+
     // Debug: Show how many were filtered
     if (relevantPages.length > 0 && relevantResults.length === 0) {
       logger.warn('⚠️ ALL results filtered out!', {
@@ -195,43 +195,43 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
         removed: relevantPages.length - relevantResults.length
       });
     }
-    
+
     if (relevantResults && relevantResults.length > 0) {
-      logger.info('✅ Found relevant pages', { 
+      logger.info('✅ Found relevant pages', {
         pageCount: relevantResults.length,
         avgScore: (relevantResults.reduce((sum, p) => sum + (p.combined_score || p.rank || 0), 0) / relevantResults.length).toFixed(3)
       });
-      
+
       // STEP 5: Reranking (Cohere or fallback)
       let finalResults = relevantResults;
-      
+
       if (relevantResults.length > 5) {  // Only rerank if we have enough results
         try {
           // Try Cohere first (best quality, FREE tier!)
           if (isCohereAvailable()) {
             const topK = Math.min(30, relevantResults.length);
             finalResults = await rerankWithCohere(query, relevantResults, topK);
-          } 
+          }
           // Fallback to local reranker if Cohere not available
           else if (searchParams.useReranker && embeddingServiceHealthy && relevantResults.length > 10) {
             logger.info('🎯 Local reranking...', { count: relevantResults.length });
-            
+
             const maxRerank = 50;
             const documentsToRerank = relevantResults.slice(0, maxRerank);
             const reranked = await embeddingClient.rerank(query, documentsToRerank.map(d => d.content), 20);
-            
+
             finalResults = reranked.map(r => ({
               ...documentsToRerank[r.index],
               reranker_score: r.score
             }));
-            
+
             logger.info('✅ Local reranking complete', { returned: finalResults.length });
           } else {
             logger.debug('No reranking available, using original order');
             finalResults = relevantResults.slice(0, 30);
           }
         } catch (error) {
-          logger.warn('⚠️ Reranking failed, using original order', { 
+          logger.warn('⚠️ Reranking failed, using original order', {
             error: error.message
           });
           finalResults = relevantResults.slice(0, 30);
@@ -240,7 +240,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
         logger.debug('Too few results to rerank', { count: relevantResults.length });
         finalResults = relevantResults;
       }
-      
+
       // Map sources with DEBUG logging
       sources = finalResults.slice(0, 30).map(page => ({
         documentId: page.document_id,
@@ -250,7 +250,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
         keywordScore: page.keyword_score,
         semanticScore: page.semantic_score
       }));
-      
+
       // DEBUG: Log page numbers being returned
       const pageNumbers = sources.map(s => s.page).filter(p => p != null);
       logger.debug('📄 Page numbers returned', {
@@ -287,11 +287,10 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
 
     let prompt = `You are an expert AI assistant like ChatGPT. Answer questions with perfect accuracy, even if the query has typos or poor grammar.
 
-${
-      contextText
+${contextText
         ? `**📚 DOCUMENT CONTEXT (Your PRIMARY Source):**\nThe following excerpts are from the user's uploaded documents. Base your answer ENTIRELY on this:\n\n${contextText}\n\n`
         : '**❌ NO RELEVANT DOCUMENTS FOUND** - The question topic was not found in the uploaded documents.\n\n'
-    }**❓ USER QUESTION:** ${query}
+      }**❓ USER QUESTION:** ${query}
 ${preprocessed.needsPreprocessing ? `\n**🔧 INTERPRETED AS:** ${preprocessed.corrected || query}` : ''}
 
 **ANSWER STRATEGY (CRITICAL - MUST FOLLOW):**
@@ -438,11 +437,11 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
     logger.info('🎬 Starting streaming query', { userId: req.userId, query: query.substring(0, 50) });
 
     // === REUSE ALL EXISTING LOGIC ===
-    
+
     // STEP 0: Preprocess query
     let preprocessed = null;
     let enhancedQuery = query;
-    
+
     if (query.length < 100) {
       sendEvent('status', { stage: 'preprocessing', message: 'Enhancing query...' });
       preprocessed = await preprocessQuery(query);
@@ -464,7 +463,7 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
     // STEP 2: Generate embedding
     let queryEmbedding = null;
     const embeddingServiceHealthy = await embeddingClient.checkHealth();
-    
+
     if (embeddingServiceHealthy) {
       sendEvent('status', { stage: 'embedding', message: 'Generating query embedding...' });
       try {
@@ -477,7 +476,7 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
     // STEP 3: Search documents
     sendEvent('status', { stage: 'searching', message: 'Searching your documents...' });
     let relevantPages = [];
-    
+
     if (queryEmbedding && queryEmbedding.length === 768) {
       if (documentIds && documentIds.length > 0) {
         const { data, error } = await supabase.rpc('hybrid_search_ultimate', {
@@ -488,7 +487,7 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
           keyword_weight: searchParams.keywordWeight,
           semantic_weight: searchParams.semanticWeight
         });
-        
+
         if (!error) relevantPages = data || [];
       } else {
         const { data, error } = await supabase.rpc('hybrid_search_all_user_documents', {
@@ -499,7 +498,7 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
           keyword_weight: searchParams.keywordWeight,
           semantic_weight: searchParams.semanticWeight
         });
-        
+
         if (!error) relevantPages = data || [];
       }
     }
@@ -511,10 +510,10 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
         : await searchAllUserDocuments(req.userId, query, searchParams.resultLimit);
     }
 
-    sendEvent('status', { 
-      stage: 'found', 
+    sendEvent('status', {
+      stage: 'found',
       message: `Found ${relevantPages.length} relevant pages`,
-      count: relevantPages.length 
+      count: relevantPages.length
     });
 
     // STEP 4: Filter by relevance
@@ -532,9 +531,9 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
         const documents = relevantResults.map(p => p.content);
         const maxRerank = 50;
         const documentsToRerank = documents.slice(0, maxRerank);
-        
+
         const reranked = await embeddingClient.rerank(query, documentsToRerank, 20);
-        
+
         finalResults = reranked.map(r => ({
           ...relevantResults[r.index],
           reranker_score: r.score
@@ -578,11 +577,10 @@ router.post('/stream', requireAuth, geminiRateLimiter, async (req, res) => {
 
     let prompt = `You are an expert AI assistant like ChatGPT. Answer questions with perfect accuracy, even if the query has typos or poor grammar.
 
-${
-      contextText
+${contextText
         ? `**📚 DOCUMENT CONTEXT (Your PRIMARY Source):**\nThe following excerpts are from the user's uploaded documents. Base your answer ENTIRELY on this:\n\n${contextText}\n\n`
         : '**❌ NO RELEVANT DOCUMENTS FOUND** - The question topic was not found in the uploaded documents.\n\n'
-    }**❓ USER QUESTION:** ${query}
+      }**❓ USER QUESTION:** ${query}
 ${preprocessed?.needsPreprocessing ? `\n**🔧 INTERPRETED AS:** ${preprocessed.corrected || query}` : ''}
 
 **ANSWER STRATEGY (CRITICAL - MUST FOLLOW):**
@@ -635,14 +633,14 @@ Provide a comprehensive, accurate, and professionally formatted answer.`;
 
     // STREAM THE RESPONSE using Gemini
     sendEvent('status', { stage: 'generating', message: 'Generating answer...' });
-    
+
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-    // Use Gemini 2.5 Flash (only working model)
+
+    // Use Gemini 2.5 Flash (stable model)
     logger.debug('Using model', { model: 'gemini-2.5-flash' });
-    
-    const model = genAI.getGenerativeModel({ 
+
+    const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
       generationConfig: {
         temperature: searchParams.temperature || 0.7,
@@ -651,7 +649,7 @@ Provide a comprehensive, accurate, and professionally formatted answer.`;
     });
 
     const result = await model.generateContentStream(prompt);
-    
+
     let fullAnswer = '';
     for await (const chunk of result.stream) {
       const text = chunk.text();
@@ -692,7 +690,7 @@ Provide a comprehensive, accurate, and professionally formatted answer.`;
 
   } catch (error) {
     logger.error('❌ Streaming query error', { error: error.message, userId: req.userId });
-    sendEvent('error', { 
+    sendEvent('error', {
       error: 'Failed to process query',
       message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });

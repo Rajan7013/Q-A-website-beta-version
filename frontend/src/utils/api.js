@@ -36,6 +36,13 @@ api.interceptors.request.use(async (config) => {
   }
   return config;
 }, (error) => {
+  if (error.response) {
+    console.error(`🚨 API Error ${error.response.status}:`, error.response.data);
+  } else if (error.request) {
+    console.error('🚨 No response received:', error.request);
+  } else {
+    console.error('🚨 Request configuration error:', error.message);
+  }
   return Promise.reject(error);
 });
 
@@ -161,7 +168,7 @@ export const uploadProfilePicture = async (userId, file, onProgress) => {
         }
       }
     });
-    
+
     return response.data.imageUrl;
   } catch (error) {
     console.error('Upload profile picture error:', error);

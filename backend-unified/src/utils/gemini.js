@@ -8,7 +8,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 export async function generateResponse(prompt, conversationHistory = [], language = 'en') {
   const maxRetries = 3;
   const baseDelay = 1000; // 1 second
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       // Log language for debugging
@@ -17,7 +17,7 @@ export async function generateResponse(prompt, conversationHistory = [], languag
       }
 
       // Use Gemini 2.5 Flash (only working model)
-      const model = genAI.getGenerativeModel({ 
+      const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
         generationConfig: {
           temperature: 0.8,  // Slightly higher for more comprehensive output
@@ -39,17 +39,17 @@ export async function generateResponse(prompt, conversationHistory = [], languag
       return response.text();
 
     } catch (error) {
-      const isRateLimitOrOverload = error.message?.includes('503') || 
-                                    error.message?.includes('429') ||
-                                    error.message?.includes('overloaded');
-      
+      const isRateLimitOrOverload = error.message?.includes('503') ||
+        error.message?.includes('429') ||
+        error.message?.includes('overloaded');
+
       if (isRateLimitOrOverload && attempt < maxRetries) {
         const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
         console.log(`⚠️ Gemini API overloaded. Retry ${attempt}/${maxRetries} in ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue; // Retry
       }
-      
+
       console.error('Gemini API error:', error);
       throw new Error('Failed to generate AI response: ' + error.message);
     }
