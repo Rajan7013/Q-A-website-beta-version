@@ -18,9 +18,5 @@
         }
       ]
     }
-  ],
-  "env": {
-    "VITE_CLERK_PUBLISHABLE_KEY": "@clerk_publishable_key",
-    "VITE_API_URL": "@api_url"
-  }
+  ]
 }
