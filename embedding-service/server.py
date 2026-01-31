@@ -67,7 +67,7 @@ async def stats():
     cache_stats = get_cache_stats()
     return {
         "cache": cache_stats,
-        "embedding_dimensions": 768,
+        "embedding_dimensions": 384,
         "max_sequence_length": 512
     }
 

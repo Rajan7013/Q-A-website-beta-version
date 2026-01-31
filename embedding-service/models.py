@@ -12,22 +12,22 @@ class EmbeddingEngine:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         print(f"🔧 Device: {self.device}")
         
-        # Load BGE embedding model (BEST free model - 84.7% accuracy)
-        print(f"📥 Loading BGE-Base-v1.5 on {self.device}...")
+        # Load Lightweight Model (Fits in Free Tier RAM)
+        print(f"📥 Loading all-MiniLM-L6-v2 on {self.device}...")
         self.embedding_model = SentenceTransformer(
-            'BAAI/bge-base-en-v1.5',
+            'sentence-transformers/all-MiniLM-L6-v2',
             device=self.device
         )
-        print(f"✅ BGE Embedding model loaded (768 dimensions)")
+        print(f"✅ MiniLM Embedding model loaded (384 dimensions)")
         
-        # Load BGE reranker (cross-encoder for better ranking)
-        print("📥 Loading BGE-Reranker-Base...")
+        # Load Lightweight Reranker
+        print("📥 Loading TinyBERT Reranker...")
         self.reranker = CrossEncoder(
-            'BAAI/bge-reranker-base',
+            'cross-encoder/ms-marco-TinyBERT-L-2-v2',
             device=self.device,
             max_length=512
         )
-        print("✅ BGE Reranker loaded")
+        print("✅ TinyBERT Reranker loaded")
         
         print("🚀 All models ready!")
     
