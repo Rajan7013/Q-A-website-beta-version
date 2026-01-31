@@ -1,41 +1,14 @@
-import pdfParse from 'pdf-parse';
+// import pdfParse from 'pdf-parse'; // Not needed - using LangChain processor
 import mammoth from 'mammoth';
 import unzipper from 'unzipper';
 import xml2js from 'xml2js';
 import { logger } from './logger.js';
 
 export async function extractTextFromPDF(buffer) {
-  try {
-    const data = await pdfParse(buffer, {
-      // Extract page by page
-      pagerender: async (pageData) => {
-        const render = await pageData.getTextContent();
-        return render.items.map(item => item.str).join(' ');
-      }
-    });
-    
-    // Extract text per page (if available)
-    let pageTexts = [];
-    
-    // Try to get individual page texts
-    if (data.text) {
-      // Split by form feed character (page separator in some PDFs)
-      const pages = data.text.split('\f');
-      if (pages.length > 1) {
-        pageTexts = pages.filter(p => p.trim().length > 0);
-      }
-    }
-    
-    return {
-      text: data.text,
-      pages: data.numpages,
-      pageTexts: pageTexts.length > 0 ? pageTexts : null,
-      info: data.info
-    };
-  } catch (error) {
-    logger.error('PDF extraction failed', { error: error.message });
-    throw new Error(`Failed to extract text from PDF: ${error.message}`);
-  }
+  // Legacy PDF processor - DISABLED
+  // Use LangChain processor instead (documentProcessorLangChain.js)
+  // Set USE_LANGCHAIN=true in .env
+  throw new Error('Legacy PDF processor disabled. Use LangChain processor (USE_LANGCHAIN=true in .env)');
 }
 
 export async function extractTextFromDOCX(buffer) {
@@ -101,7 +74,7 @@ export function chunkText(text, chunkSize = 1000, overlap = 100) {
   while (start < text.length) {
     const end = Math.min(start + chunkSize, text.length);
     const chunk = text.substring(start, end);
-    
+
     chunks.push({
       content: chunk.trim(),
       startOffset: start,
@@ -138,11 +111,11 @@ export async function processDocument(buffer, fileType) {
 
     const normalizedText = normalizeText(extractedData.text);
     let pages = [];
-    
+
     // FOR PDFs: Use actual page-by-page text if available
     if (fileType.toLowerCase() === '.pdf' && extractedData.pageTexts && extractedData.pageTexts.length > 0) {
       logger.info('📄 Using actual PDF pages', { pageCount: extractedData.pageTexts.length });
-      
+
       pages = extractedData.pageTexts.map((pageText, index) => {
         const normalized = normalizeText(pageText);
         return {
@@ -156,11 +129,11 @@ export async function processDocument(buffer, fileType) {
           }
         };
       }).filter(page => page.content.length > 50);  // Skip mostly empty pages
-      
+
     } else {
       // FALLBACK: Chunk text for other formats or if PDF page extraction failed
       logger.info('📝 Using text chunking', { fileType });
-      
+
       const chunks = chunkText(normalizedText, 1000, 100);
       pages = chunks.map((chunk, index) => ({
         pageNumber: index + 1,
@@ -175,7 +148,7 @@ export async function processDocument(buffer, fileType) {
       }));
     }
 
-    logger.info('✅ Document processed', { 
+    logger.info('✅ Document processed', {
       fileType,
       totalPages: pages.length,
       wordCount: normalizedText.split(/\s+/).length,

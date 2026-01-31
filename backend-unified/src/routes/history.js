@@ -1,24 +1,44 @@
 import express from 'express';
 import { logger } from '../utils/logger.js';
+import { chatMemory } from '../services/chatMemory.js';
 
 const router = express.Router();
 
-// In-memory storage
-const chatHistories = new Map();
-
-// Get recent chats
+// Get recent chats (summary only)
 router.get('/:userId', (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 10 } = req.query;
-    
-    const userChats = chatHistories.get(userId) || [];
-    const recentChats = userChats.slice(0, parseInt(limit));
-    
-    res.json({ chats: recentChats });
+
+    // Use shared memory
+    const userChats = chatMemory.get(userId);
+    const summaries = userChats.map(chat => ({
+      ...chat,
+      messages: chat.messages ? chat.messages.length : 0
+    })).slice(0, parseInt(limit));
+
+    res.json({ chats: summaries });
   } catch (error) {
     logger.error('Get chat history error', { error: error.message });
     res.status(500).json({ error: 'Failed to get chat history' });
+  }
+});
+
+// Get specific chat session (full details)
+router.get('/:userId/:sessionId', (req, res) => {
+  try {
+    const { userId, sessionId } = req.params;
+    // Use shared memory
+    const chat = chatMemory.getSession(userId, sessionId);
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    res.json({ chat });
+  } catch (error) {
+    logger.error('Get chat session error', { error: error.message });
+    res.status(500).json({ error: 'Failed to get chat session' });
   }
 });
 
@@ -27,37 +47,74 @@ router.post('/:userId', (req, res) => {
   try {
     const { userId } = req.params;
     const { sessionId, title, messages } = req.body;
-    
-    let userChats = chatHistories.get(userId) || [];
-    
-    const existingIndex = userChats.findIndex(chat => chat.sessionId === sessionId);
-    
+
+    const existing = chatMemory.getSession(userId, sessionId);
+
     const chatData = {
       id: sessionId,
       sessionId,
-      title: title || 'Untitled Chat',
+      title: title || (existing ? existing.title : 'Untitled Chat'),
       time: getRelativeTime(new Date()),
-      messages: messages.length,
+      messages: messages, // Full messages stored in shared memory
       lastMessage: messages[messages.length - 1]?.text || '',
-      color: getRandomColor()
+      color: existing ? existing.color : getRandomColor()
     };
-    
-    if (existingIndex >= 0) {
-      userChats[existingIndex] = chatData;
-    } else {
-      userChats.unshift(chatData);
-    }
-    
-    userChats = userChats.slice(0, 50);
-    
-    chatHistories.set(userId, userChats);
-    
-    logger.info('Chat saved', { userId, sessionId });
-    
-    res.json({ message: 'Chat saved', chat: chatData });
+
+    // Save to shared memory
+    const savedChat = chatMemory.saveSession(userId, chatData);
+
+    logger.info('Chat saved', { userId, sessionId, messageCount: messages.length });
+
+    res.json({ message: 'Chat saved', chat: { ...savedChat, messages: messages.length } });
   } catch (error) {
     logger.error('Save chat error', { error: error.message });
     res.status(500).json({ error: 'Failed to save chat' });
+  }
+});
+
+// Delete chat session
+router.delete('/:userId/:sessionId', (req, res) => {
+  try {
+    const { userId, sessionId } = req.params;
+    // Delete from shared memory
+    const deleted = chatMemory.deleteSession(userId, sessionId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    logger.info('Chat deleted', { userId, sessionId });
+    res.json({ message: 'Chat deleted successfully' });
+  } catch (error) {
+    logger.error('Delete chat error', { error: error.message });
+    res.status(500).json({ error: 'Failed to delete chat' });
+  }
+});
+
+// Rename chat session
+router.put('/:userId/:sessionId', (req, res) => {
+  try {
+    const { userId, sessionId } = req.params;
+    const { title } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    const chat = chatMemory.getSession(userId, sessionId);
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    chat.title = title;
+    chatMemory.saveSession(userId, chat);
+
+    logger.info('Chat renamed', { userId, sessionId, newTitle: title });
+
+    res.json({ message: 'Chat renamed', chat: { ...chat, messages: chat.messages ? chat.messages.length : 0 } });
+  } catch (error) {
+    logger.error('Rename chat error', { error: error.message });
+    res.status(500).json({ error: 'Failed to rename chat' });
   }
 });
 
@@ -79,7 +136,7 @@ function getRelativeTime(date) {
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
-  
+
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;

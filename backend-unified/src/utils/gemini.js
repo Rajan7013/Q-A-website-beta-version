@@ -1,77 +1,100 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
-export async function generateResponse(prompt, conversationHistory = [], language = 'en') {
-  const maxRetries = 3;
-  const baseDelay = 1000; // 1 second
+// Using Llama 3.3 70B (Latest supported model)
+const MODEL_NAME = "llama-3.3-70b-versatile";
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      // Log language for debugging
-      if (language !== 'en') {
-        console.log('🌍 Generating response in:', language);
+export async function generateResponse(prompt, conversationHistory = [], language = 'en', options = {}) {
+  try {
+    // Convert history format if needed
+    // Convert history format if needed
+    const messages = conversationHistory.map(msg => {
+      // Handle Frontend/Memory format { type: 'user'|'bot', text: '...' }
+      if (msg.type && msg.text) {
+        return {
+          role: msg.type === 'bot' || msg.type === 'model' ? 'assistant' : 'user',
+          content: msg.text
+        };
       }
-
-      // Use Gemini 2.5 Flash (only working model)
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash",
-        generationConfig: {
-          temperature: 0.8,  // Slightly higher for more comprehensive output
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 8192,  // Maximum tokens for complete answers
-        }
-      });
-
-      const chat = model.startChat({
-        history: conversationHistory,
-        generationConfig: {
-          temperature: 0.7,
-        },
-      });
-
-      const result = await chat.sendMessage(prompt);
-      const response = await result.response;
-      return response.text();
-
-    } catch (error) {
-      const isRateLimitOrOverload = error.message?.includes('503') ||
-        error.message?.includes('429') ||
-        error.message?.includes('overloaded');
-
-      if (isRateLimitOrOverload && attempt < maxRetries) {
-        const delay = baseDelay * Math.pow(2, attempt - 1); // Exponential backoff
-        console.log(`⚠️ Gemini API overloaded. Retry ${attempt}/${maxRetries} in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue; // Retry
+      // Handle Google Gemini format { role, parts: [{text}] }
+      if (msg.parts && msg.parts[0]?.text) {
+        return {
+          role: msg.role === 'model' ? 'assistant' : msg.role,
+          content: msg.parts[0].text
+        };
       }
+      // Handle Groq/OpenAI format { role, content }
+      return {
+        role: msg.role || 'user',
+        content: msg.content || ''
+      };
+    });
 
-      console.error('Gemini API error:', error);
-      throw new Error('Failed to generate AI response: ' + error.message);
+    // Add current prompt
+    messages.push({ role: 'user', content: prompt });
+
+    // Add system instruction for language if needed
+    if (language !== 'en') {
+      messages.unshift({
+        role: "system",
+        content: `You must respond in ${language}.`
+      });
     }
+
+    const chatCompletion = await groq.chat.completions.create({
+      messages: messages,
+      model: MODEL_NAME,
+      temperature: options.temperature || 0.7,
+      max_tokens: options.maxTokens || 8192,
+      top_p: 1,
+      stream: false,
+    });
+
+    return chatCompletion.choices[0]?.message?.content || "";
+
+  } catch (error) {
+    console.error('Groq API error:', error);
+
+    if (error.status === 429) {
+      return "⚠️ **AI Rate Limit Reached**\n\nThe Groq API is currently busy. Please try again in a moment.";
+    }
+
+    // Handle context length errors
+    if (error.status === 400 && error.error?.code === 'context_length_exceeded') {
+      return "⚠️ **Document Too Large**\n\nThe document context is too large for the AI to process at once. Please try asking about a specific part.";
+    }
+
+    throw new Error('Failed to generate AI response: ' + (error.message || error));
   }
 }
 
 export async function analyzeDocument(documentText, query) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
     const prompt = `Analyze the following document and answer the question.
 
 Document content:
-${documentText.substring(0, 10000)}
+${documentText.substring(0, 50000)}
 
 Question: ${query}
 
 Provide a clear, well-formatted answer based on the document content.`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        { role: "user", content: prompt }
+      ],
+      model: MODEL_NAME,
+      temperature: 0.5,
+      max_tokens: 4096,
+    });
+
+    return chatCompletion.choices[0]?.message?.content || "";
 
   } catch (error) {
     console.error('Document analysis error:', error);

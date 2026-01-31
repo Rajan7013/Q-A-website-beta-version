@@ -5,7 +5,7 @@ import { uploadRateLimiter } from '../middleware/rateLimiter.js';
 import { validateFileUpload, calculateChecksum, scanFile } from '../middleware/security.js';
 import { uploadToR2, generateFileKey } from '../utils/r2Storage.js';
 import { createDocument, saveDocumentPages, ensureUser } from '../utils/supabase.js';
-import { processDocument } from '../utils/documentProcessor.js';
+import { processDocument } from '../utils/documentProcessorLangChain.js'; // Use LangChain processor
 import { logger } from '../utils/logger.js';
 import embeddingClient from '../utils/embeddingClient.js';
 import supabase from '../utils/supabase.js';
@@ -33,7 +33,7 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
     logger.info('File scanned', { safe: scanResult.safe, checksum: scanResult.checksum });
 
     const fileKey = generateFileKey(req.userId, req.file.originalname);
-    
+
     await uploadToR2(req.file.buffer, fileKey, req.file.mimetype);
 
     const fileType = '.' + req.file.originalname.split('.').pop().toLowerCase();
@@ -58,7 +58,7 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
         const embeddingServiceHealthy = await embeddingClient.checkHealth();
         if (embeddingServiceHealthy) {
           logger.info('🧮 Generating embeddings for document pages...', { documentId: document.id, pageCount: savedPages.length });
-          
+
           for (const page of savedPages) {
             try {
               const embedding = await embeddingClient.generateEmbedding(page.content);
@@ -72,7 +72,7 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
               logger.warn('Failed to generate embedding for page', { pageId: page.id, error: err.message });
             }
           }
-          
+
           logger.info('✅ Embeddings generated', { documentId: document.id });
         } else {
           logger.warn('⚠️ Embedding service unavailable, skipping embeddings', { documentId: document.id });
@@ -93,7 +93,9 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
       message: 'File uploaded and processed successfully',
       document: {
         id: document.id,
+        name: document.filename, // Map to 'name' for frontend
         filename: document.filename,
+        size: document.file_size, // Map to 'size' for frontend
         fileSize: document.file_size,
         pageCount: document.page_count,
         wordCount: document.word_count,
@@ -103,11 +105,11 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
 
   } catch (error) {
     logger.error('Upload error', { error: error.message, userId: req.userId });
-    
+
     if (error.message.includes('size exceeds') || error.message.includes('not allowed')) {
       return res.status(400).json({ error: error.message });
     }
-    
+
     res.status(500).json({
       error: 'Failed to upload file',
       message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'

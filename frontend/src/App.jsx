@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useUser, useAuth, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
-import Navbar from './components/Navbar';
 import HomePage from './components/HomePage';
 import ChatPage from './components/ChatPage';
 import UploadPage from './components/UploadPage';
@@ -41,6 +40,15 @@ function App() {
       setStats(userStats);
     } catch (error) {
       console.error("Failed to fetch initial data:", error);
+      // Fallback to allow app to load even if backend is down/broken
+      setUploadedDocs([]);
+      setUserProfile({
+        firstName: user?.firstName || 'User',
+        lastName: user?.lastName || '',
+        email: user?.primaryEmailAddress?.emailAddress
+      });
+      setSettings({ language: 'en', theme: 'dark' });
+      setStats({ documentsAnalyzed: 0, queriesAsked: 0, storageUsed: 0 });
     } finally {
       setIsLoading(false);
     }
@@ -77,11 +85,10 @@ function App() {
   // Show loading screen while Clerk loads
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans flex items-center justify-center">
+      <div className="h-screen bg-gray-900 text-white font-sans flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-purple-500 mx-auto mb-8"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-blue-500 mx-auto mb-8"></div>
           <h2 className="text-3xl font-bold mb-2">Loading AI Doc Analyzer...</h2>
-          <p className="text-gray-400">Initializing your workspace</p>
         </div>
       </div>
     );
@@ -90,7 +97,7 @@ function App() {
   // Show sign in if not authenticated
   if (!isSignedIn) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans flex items-center justify-center">
+      <div className="h-screen bg-gray-900 text-white font-sans flex items-center justify-center">
         <div className="max-w-md w-full p-8">
           <Routes>
             <Route path="/sign-in" element={<LoginPage />} />
@@ -108,24 +115,38 @@ function App() {
   // Show loading screen while initial data loads
   if (isLoading || !userProfile || !settings || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans flex items-center justify-center">
+      <div className="h-screen bg-gray-900 text-white font-sans flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-purple-500 mx-auto mb-8"></div>
-          <h2 className="text-3xl font-bold mb-2">Loading your data...</h2>
-          <p className="text-gray-400">Please wait</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-blue-500 mx-auto mb-8"></div>
+          <p className="text-gray-400">Loading your workspace...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white font-sans">
-      <Navbar userProfile={userProfile} />
+    <div className="h-screen bg-gray-900 text-white font-sans flex overflow-hidden">
       <InstallPrompt />
-      <main className="p-2 sm:p-4 md:p-6 lg:p-8 pb-20 md:pb-4">
+      <main className="flex-1 h-full w-full relative">
         <Routes>
-          <Route path="/" element={<HomePage uploadedDocs={uploadedDocs} userId={userId} stats={stats} />} />
-          <Route path="/chat" element={<ChatPage sessionId={sessionId} uploadedDocs={uploadedDocs} userId={userId} setStats={setStats} settings={settings} />} />
+          <Route path="/" element={<Navigate to={`/chat/${sessionId}`} replace />} />
+
+          {/* Chat Routes */}
+          <Route path="/chat" element={<Navigate to={`/chat/${sessionId}`} replace />} />
+          <Route
+            path="/chat/:sessionId"
+            element={
+              <ChatPage
+                uploadedDocs={uploadedDocs}
+                userId={userId}
+                setStats={setStats}
+                settings={settings}
+                onDocumentDelete={handleDocumentDelete}
+                onDocumentUpload={handleDocumentUpload}
+              />
+            }
+          />
+
           <Route path="/upload" element={<UploadPage onDocumentUpload={handleDocumentUpload} />} />
           <Route path="/documents" element={<DocumentsPage uploadedDocs={uploadedDocs} onDocumentDelete={handleDocumentDelete} isLoading={false} />} />
           <Route path="/settings" element={<SettingsPage settings={settings} setSettings={setSettings} userId={userId} />} />

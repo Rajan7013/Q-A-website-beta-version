@@ -78,14 +78,14 @@ Be concise. Only fix obvious errors.`;
 
     // Cache result
     PREPROCESSING_CACHE.set(cacheKey, processed);
-    
+
     // Limit cache size
     if (PREPROCESSING_CACHE.size > MAX_CACHE_SIZE) {
       const firstKey = PREPROCESSING_CACHE.keys().next().value;
       PREPROCESSING_CACHE.delete(firstKey);
     }
 
-    logger.info('Query preprocessed', { 
+    logger.info('Query preprocessed', {
       original: rawQuery.substring(0, 50),
       corrected: processed.corrected?.substring(0, 50),
       termsAdded: processed.expandedTerms?.length || 0
@@ -110,20 +110,20 @@ Be concise. Only fix obvious errors.`;
  */
 export function buildEnhancedQuery(preprocessed) {
   const { corrected, expandedTerms, keyPhrases } = preprocessed;
-  
+
   // Start with corrected query
   let enhanced = corrected;
-  
+
   // Add key phrases with OR logic
   if (keyPhrases && keyPhrases.length > 0) {
     enhanced += ' ' + keyPhrases.join(' ');
   }
-  
+
   // Add expanded terms
   if (expandedTerms && expandedTerms.length > 0) {
     enhanced += ' ' + expandedTerms.slice(0, 5).join(' '); // Limit to 5 terms
   }
-  
+
   return enhanced.trim();
 }
 
@@ -150,13 +150,62 @@ function basicTypoCorrection(query) {
   };
 
   let corrected = query.toLowerCase();
-  
+
   Object.entries(corrections).forEach(([typo, correct]) => {
     const regex = new RegExp(`\\b${typo}\\b`, 'gi');
     corrected = corrected.replace(regex, correct);
   });
 
   return corrected;
+}
+
+/**
+ * Normalize query by removing common question words
+ * Makes "explain Workflow of BERT" = "Workflow of BERT"
+ */
+export function normalizeQuery(query) {
+  if (!query) return query;
+
+  // Common question words/phrases to remove
+  const fillerPatterns = [
+    /^explain\s+/i,
+    /^define\s+/i,
+    /^what\s+is\s+/i,
+    /^what\s+are\s+/i,
+    /^what's\s+/i,
+    /^how\s+does\s+/i,
+    /^how\s+do\s+/i,
+    /^why\s+is\s+/i,
+    /^why\s+are\s+/i,
+    /^tell\s+me\s+about\s+/i,
+    /^give\s+me\s+/i,
+    /^show\s+me\s+/i,
+    /^describe\s+/i,
+    /^can\s+you\s+explain\s+/i,
+    /^can\s+you\s+tell\s+me\s+/i,
+    /^i\s+want\s+to\s+know\s+about\s+/i,
+    /^i\s+need\s+to\s+know\s+/i
+  ];
+
+  let normalized = query.trim();
+
+  // Remove filler patterns
+  for (const pattern of fillerPatterns) {
+    normalized = normalized.replace(pattern, '');
+  }
+
+  // Remove trailing question marks and extra spaces
+  normalized = normalized
+    .replace(/\?+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  logger.debug('Query normalized', {
+    original: query.substring(0, 50),
+    normalized: normalized.substring(0, 50)
+  });
+
+  return normalized;
 }
 
 export function clearCache() {

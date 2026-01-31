@@ -56,7 +56,9 @@ router.get('/', requireAuth, async (req, res) => {
     res.json({
       documents: documents.map(doc => ({
         id: doc.id,
+        name: doc.filename || doc.title, // Map to 'name' for frontend
         filename: doc.filename,
+        size: doc.file_size, // Map to 'size' for frontend
         fileSize: doc.file_size,
         fileType: doc.file_type,
         pageCount: doc.page_count,

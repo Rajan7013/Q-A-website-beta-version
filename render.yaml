@@ -1,49 +1,56 @@
-# Render Blueprint for Backend Deployment
-# https://render.com/docs/blueprint-spec
-
 services:
+  # ------------------------------------
+  # 1. The Node.js Backend
+  # ------------------------------------
   - type: web
-    name: ai-doc-analyzer-backend
-    env: node
+    name: qa-system-backend
+    runtime: node
     region: oregon
     plan: free
-    buildCommand: cd backend-unified && npm install
-    startCommand: cd backend-unified && npm start
-    healthCheckPath: /health
+
+    # CRITICAL: Point to the subfolder
+    rootDir: backend-unified
+
+    # Commands run INSIDE that folder
+    buildCommand: npm install
+    startCommand: npm start
+
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
       - key: GEMINI_API_KEY
         sync: false
       - key: CLERK_SECRET_KEY
-        sync: false
-      - key: CLERK_PUBLISHABLE_KEY
         sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
         sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: R2_ACCOUNT_ID
-        sync: false
+      - key: R2_BUCKET_NAME
+        value: qa-system-storage
       - key: R2_ACCESS_KEY_ID
         sync: false
       - key: R2_SECRET_ACCESS_KEY
         sync: false
-      - key: R2_BUCKET_NAME
-        value: question
-      - key: R2_PUBLIC_URL
+
+  # ------------------------------------
+  # 2. The Python Embedding Service
+  # ------------------------------------
+  - type: web
+    name: qa-system-embedding
+    runtime: python
+    region: oregon
+    plan: free
+
+    # CRITICAL: Point to the subfolder
+    rootDir: embedding-service
+
+    # Commands run INSIDE that folder
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: GEMINI_API_KEY
         sync: false
-      - key: MAX_FILE_SIZE_MB
-        value: 50
-      - key: ALLOWED_FILE_TYPES
-        value: pdf,docx,pptx,txt
-      - key: RATE_LIMIT_WINDOW_MS
-        value: 900000
-      - key: RATE_LIMIT_MAX_REQUESTS
-        value: 100
-      - key: LOG_LEVEL
-        value: info

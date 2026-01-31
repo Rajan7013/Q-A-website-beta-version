@@ -1,567 +1,137 @@
-# 🤖 AI Document Analyzer - QA System
+# 🤖 AI Q&A System - Project Documentation
 
-A powerful AI-powered Question & Answer system that analyzes documents and provides intelligent responses in **8 languages** with **text-to-speech** capabilities.
+**The Complete Guide to the Architecture, Setup, and Development of the Q&A System.**
 
-[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
-[![Gemini AI](https://img.shields.io/badge/Gemini-2.5%20Flash-orange.svg)](https://ai.google.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+> **READ THIS FIRST:** This project is a complex, multi-service application (Frontend, Backend, AI, Database, Storage). Success depends on following the **detailed guides** linked below.
 
 ---
 
-## ✨ Features
+## 📚 Table of Contents
 
-### 🎯 Core Features
-- **📄 Document Upload & Analysis** - Upload PDF, DOCX, TXT files
-- **🤖 AI-Powered Q&A** - Ask questions, get intelligent answers
-- **📚 Document-First Approach** - AI reads your documents before answering
-- **💬 Context-Aware Chat** - Remembers conversation history
-- **🌍 8 Languages Support** - Multilingual responses
-- **🔊 Text-to-Speech** - Indian female voice in all languages
-- **📱 Fully Responsive** - Works on mobile, tablet, desktop
-
-### 🌐 Supported Languages
-- 🇬🇧 English
-- 🇮🇳 Hindi (हिंदी)
-- 🇮🇳 Telugu (తెలుగు)
-- 🇮🇳 Tamil (தமிழ்)
-- 🇮🇳 Malayalam (മലയാളം)
-- 🇮🇳 Bengali (বাংলা)
-- 🇳🇵 Nepali (नेपाली)
-- 🇮🇳 Maithili (मैथिली)
-
-### 🎨 Additional Features
-- **Beautiful Markdown Rendering** - Professional formatting
-- **Mobile Bottom Navigation** - Native app-like experience
-- **Dark Mode** - Eye-friendly interface
-- **User Profiles** - Personalized experience
-- **Stats & Analytics** - Track your usage
-- **Chat History** - Save conversations
+1.  [Concept & Architecture](#-concept--architecture)
+2.  [Detailed Setup Guides](#-detailed-setup-guides-step-by-step)
+3.  [Project Structure](#-project-structure-minute-details)
+4.  [How to Collaborate](#-how-to-collaborate)
+5.  [Update Strategy](#-update-strategy)
 
 ---
 
-## 🚀 Quick Start
+## 🏛️ Concept & Architecture
 
-### Prerequisites
+This system allows a user to **chat with their documents**.
+*   **Flow:** Upload PDF -> Extract Text -> Generate Vectors (AI) -> Store in DB -> User Asks Question -> Search Vectors -> Generate Answer.
 
-Before you begin, ensure you have the following installed:
-- **Node.js** (v18.x or higher) - [Download](https://nodejs.org/)
-- **npm** (comes with Node.js)
-- **Git** - [Download](https://git-scm.com/)
-- **Gemini API Key** - [Get one free](https://ai.google.dev/)
+### Key Components (How we use them)
+*   **Frontend (React):** The user interface. It talks to the Backend API.
+*   **Backend (Node.js):** The "brain". It orchestrates Supabase, Cloudflare R2, and Gemini AI.
+*   **Supabase (PostgreSQL):** Stores *metadata* (filenames) and *embeddings* (the mathematical representation of text).
+*   **Cloudflare R2:** Stores the *actual* PDF files cheaply (10GB free).
+*   **Clerk:** Handles who is logging in.
 
-### Installation
-
-#### 1. Clone the Repository
-
-```bash
-git clone https://github.com/Rajan7013/Q-A-website.git
-cd Q-A-website
-```
-
-#### 2. Backend Setup
-
-```bash
-# Navigate to backend directory
-cd backend
-
-# Install dependencies
-npm install
-
-# Create .env file
-# Copy the following and paste into backend/.env
-```
-
-Create a file named `.env` in the `backend` folder with:
-
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-PORT=5000
-```
-
-**How to get Gemini API Key:**
-1. Go to [Google AI Studio](https://ai.google.dev/)
-2. Click "Get API Key"
-3. Create a new API key
-4. Copy and paste into `.env` file
-
-#### 3. Frontend Setup
-
-```bash
-# Navigate to frontend directory (from project root)
-cd frontend
-
-# Install dependencies
-npm install
-```
-
-#### 4. Run the Application
-
-**Terminal 1 - Start Backend:**
-```bash
-cd backend
-npm run dev
-```
-
-Backend will start on `http://localhost:5000`
-
-**Terminal 2 - Start Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-
-Frontend will start on `http://localhost:5173`
-
-#### 5. Open in Browser
-
-```
-http://localhost:5173
-```
-
-**🎉 You're ready to go!**
+👉 **[Read SYSTEM_ARCHITECTURE.md for the full diagram](docs/architecture/SYSTEM_ARCHITECTURE.md)**
 
 ---
 
-## 📁 Project Structure
+## �️ Detailed Setup Guides (Step-by-Step)
+
+To run this project, you must configure 3 external services. We have minute-by-minute guides for each:
+
+### 1. Database (Supabase) 🗄️
+*   **Goal:** Create tables and get API keys.
+*   **Details:** We use specific SQL queries to create `documents` and `document_pages` tables with `vector` support.
+*   👉 **[READ: Supabase Detailed Setup](docs/setup/SUPABASE_SETUP.md)**
+
+### 2. Authentication (Clerk) 🔐
+*   **Goal:** Allow users to log in with Google.
+*   **Details:** Configure "Publishable Key" (Frontend) and "Secret Key" (Backend).
+*   👉 **[READ: Clerk Detailed Setup](docs/setup/CLERK_SETUP.md)**
+
+### 3. File Storage (Cloudflare R2) ☁️
+*   **Goal:** Store user PDFs for free.
+*   **Details:** Includes instructions on **Bank Card Verification** (Required for free tier) and **CORS JSON** settings.
+*   👉 **[READ: Cloudflare R2 Detailed Setup](docs/setup/CLOUDFLARE_R2_SETUP.md)**
+
+### 4. API Keys (Gemini/Groq) 🔑
+*   **Goal:** Give the AI its intelligence.
+*   👉 **[READ: API Keys Guide](docs/setup/API_KEYS.md)**
+
+---
+
+## 📁 Project Structure (Minute Details)
+
+Understanding the folder structure is key to "minute details" collaboration.
 
 ```
-Q-A-website/
-├── backend/                    # Backend (Node.js + Express)
-│   ├── routes/                 # API routes
-│   │   ├── chat.js            # Chat API with AI
-│   │   ├── documents.js       # Document upload/management
-│   │   ├── profile.js         # User profile & settings
-│   │   ├── stats.js           # Analytics & statistics
-│   │   └── history.js         # Chat history
-│   ├── utils/                 # Utility functions
-│   │   ├── gemini.js          # Gemini AI integration
-│   │   └── formatResponse.js  # Response formatting
-│   ├── uploads/               # Uploaded documents storage
-│   ├── server.js              # Express server
-│   ├── package.json           # Backend dependencies
-│   └── .env                   # Environment variables (create this!)
-│
-├── frontend/                   # Frontend (React + Vite)
+root/
+├── backend-unified/           # THE BACKEND SERVER
 │   ├── src/
-│   │   ├── components/        # React components
-│   │   │   ├── ChatPage.jsx   # AI Chat interface
-│   │   │   ├── HomePage.jsx   # Landing page
-│   │   │   ├── UploadPage.jsx # Document upload
-│   │   │   ├── DocumentsPage.jsx  # Document management
-│   │   │   ├── SettingsPage.jsx   # Settings & language
-│   │   │   ├── ProfilePage.jsx    # User profile
-│   │   │   └── Navbar.jsx     # Navigation
-│   │   ├── utils/
-│   │   │   └── api.js         # API calls
-│   │   ├── App.jsx            # Main app component
-│   │   ├── main.jsx           # Entry point
-│   │   └── index.css          # Global styles
-│   ├── public/                # Static assets
-│   ├── index.html             # HTML template
-│   ├── package.json           # Frontend dependencies
-│   └── vite.config.js         # Vite configuration
+│   │   ├── server.js          # Entry point (port 5000)
+│   │   ├── routes/            # API Endpoints
+│   │   │   ├── chat.js        # The Main QA Logic (Prompt Engineering)
+│   │   │   └── upload.js      # Handles file uploads to R2
+│   │   └── supabase/
+│   │       └── NEW_PROJECT_SETUP.sql  # The Database Schema Source of Truth
+│   └── .env                   # BE CAREFUL (Contains Secret Keys)
 │
-├── README.md                  # This file
-├── .gitignore                 # Git ignore file
-└── package.json               # Root package.json
+├── frontend/                  # THE UI
+│   ├── src/
+│   │   ├── components/        # React Components
+│   │   └── utils/
+│   │       └── api.js         # Frontend-to-Backend Connection Logic
+│   └── .env                   # Contains Public Keys
+│
+└── docs/                      # DOCUMENTATION HUB
+    ├── setup/                 # Service Guides
+    ├── architecture/          # Design Docs
+    └── contributing/          # How to push code
 ```
 
 ---
 
-## 🛠️ Technologies Used
+## 🤝 How to Collaborate
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **Gemini AI (2.5 Flash)** - AI language model
-- **Multer** - File upload handling
-- **pdf-parse** - PDF text extraction
-- **mammoth** - DOCX text extraction
-- **CORS** - Cross-origin resource sharing
+Anyone can collaborate! Here is the process:
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool & dev server
-- **TailwindCSS** - Utility-first CSS
-- **React Markdown** - Markdown rendering
-- **Lucide React** - Icon library
-- **Axios** - HTTP client
-- **Web Speech API** - Text-to-speech
+1.  **Read the Docs:** Specifically the **Setup Guides** above.
+2.  **Pull the Code:** `git clone ...`
+3.  **Cross-Check:** Always look at `backend-unified/src/server.js` to see what the server is actually doing.
+4.  **Database Updates:** If you change the database, update `backend-unified/supabase/NEW_PROJECT_SETUP.sql`. This is our "Source of Truth".
+
+👉 **[Read CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md)**
 
 ---
 
-## 📖 Usage Guide
+## 🔄 Update Strategy
 
-### 1. Upload Documents
+**How do we update the system without breaking things?**
 
-1. Click **Upload** in navigation
-2. Choose file (PDF, DOCX, TXT)
-3. Wait for processing
-4. Document ready for questions!
+1.  **Database Changes:**
+    *   NEVER delete tables.
+    *   ALWAYS write an `.sql` migration file (e.g., `ALTER TABLE users ADD column...`).
+    *   Test it in Supabase SQL Editor first.
 
-### 2. Ask Questions
-
-1. Go to **Chat** page
-2. Type your question
-3. AI reads documents and responds
-4. View source attribution (📄 or 🧠)
-
-### 3. Listen to Answers
-
-1. Get AI response
-2. Click speaker icon (🔊)
-3. Hear answer in Indian female voice
-4. Control with pause/stop buttons
-
-### 4. Change Language
-
-1. Go to **Settings**
-2. Select preferred language
-3. Click "Save Settings"
-4. AI now responds in that language!
-
-### 5. View Statistics
-
-1. Go to **Profile**
-2. See your usage stats
-3. Track documents analyzed
-4. View questions answered
+2.  **Frontend Updates:**
+    *   Frontend relies on Backend APIs.
+    *   If you change a Backend API response, check `frontend/src/utils/api.js` to ensure the frontend can handle it.
 
 ---
 
-## 🌍 Language Support
+## 🚀 Quick Start Commands
 
-### How It Works:
+Once you have followed the **Setup Guides** and filled your `.env` files:
 
-**Question:** (English) "What is Python?"
-
-**Response:** (Selected Language)
-- **English:** "Python is a programming language..."
-- **Hindi:** "पायथन एक प्रोग्रामिंग भाषा है..."
-- **Telugu:** "పైథాన్ ఒక ప్రోగ్రామింగ్ భాష..."
-- **Tamil:** "பைத்தான் ஒரு நிரலாக்க மொழி..."
-
-### Voice Support:
-All 8 languages have Indian accent text-to-speech support!
-
----
-
-## 🎯 Key Features Explained
-
-### 1. Document-First Approach
-
-The AI follows a strict 4-step process:
-1. **Read** all uploaded documents completely
-2. **Analyze** your question
-3. **Search** in documents thoroughly
-4. **Decide** where to get the answer:
-   - 📄 From documents (preferred)
-   - 🧠 From AI knowledge (if not in docs)
-
-### 2. Markdown Rendering
-
-Responses are beautifully formatted with:
-- **Headings** - Clear hierarchy
-- **Bold & Italic** - Emphasis
-- **Lists** - Organized points
-- **Code blocks** - Syntax highlighting
-- **Tables** - Structured data
-- **Links** - Clickable references
-
-### 3. Text-to-Speech
-
-Features:
-- **Indian female voice** in all languages
-- **Play/Pause/Stop** controls
-- **Markdown-aware** - strips formatting for clean speech
-- **Offline** - works without internet
-
-### 4. Mobile Responsive
-
-- **Bottom navigation bar** on mobile (like native apps)
-- **Touch-optimized** buttons and controls
-- **Responsive text** sizing
-- **Safe area** support for iPhone notch
-
----
-
-## 🔧 Configuration
-
-### Backend Configuration
-
-**Environment Variables** (`backend/.env`):
-```env
-GEMINI_API_KEY=your_api_key_here
-PORT=5000
-```
-
-**Server Settings** (`backend/server.js`):
-- Port: `5000`
-- CORS: Enabled for `http://localhost:5173`
-- File Upload: Max 50MB
-
-### Frontend Configuration
-
-**API URL** (`frontend/src/utils/api.js`):
-```javascript
-const API_BASE_URL = 'http://localhost:5000/api';
-```
-
-**Vite Config** (`frontend/vite.config.js`):
-- Dev Server Port: `5173`
-- Hot Module Replacement: Enabled
-
----
-
-## 📱 Browser Support
-
-### Desktop
-- ✅ Chrome 90+ (Recommended)
-- ✅ Edge 90+
-- ✅ Firefox 88+
-- ✅ Safari 14+
-
-### Mobile
-- ✅ Chrome Mobile
-- ✅ Safari iOS
-- ✅ Samsung Internet
-- ✅ Firefox Mobile
-
-### Text-to-Speech
-- ✅ Chrome (Best Indian voice support)
-- ✅ Edge (Excellent support)
-- ✅ Safari (Good support)
-- ✅ Firefox (Basic support)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-
-**Problem:** `Error: Cannot find module 'express'`
+**Terminal 1 (Backend):**
 ```bash
-cd backend
+cd backend-unified
 npm install
+npm run dev
 ```
 
-**Problem:** `Gemini API error`
-- Check if API key is correct in `backend/.env`
-- Ensure key is active at [Google AI Studio](https://ai.google.dev/)
-
-### Frontend won't start
-
-**Problem:** `Module not found`
+**Terminal 2 (Frontend):**
 ```bash
 cd frontend
 npm install
+npm run dev
 ```
 
-**Problem:** `Connection refused to localhost:5000`
-- Ensure backend is running
-- Check backend console for errors
-
-### Document upload fails
-
-**Problem:** File too large
-- Max file size: 50MB
-- Try compressing the file
-
-**Problem:** Unsupported file type
-- Supported: PDF, DOCX, TXT
-- Convert to supported format
-
-### Text-to-Speech not working
-
-**Problem:** No sound
-- Check browser permissions
-- Ensure volume is on
-- Try Chrome for best support
-
----
-
-## 📝 API Documentation
-
-### Chat API
-
-**POST** `/api/chat/message`
-```json
-{
-  "message": "What is Python?",
-  "sessionId": "session-123",
-  "documents": [{"id": "doc1", "name": "file.pdf"}],
-  "context": {"topic": "programming"},
-  "language": "en"
-}
-```
-
-**Response:**
-```json
-{
-  "response": "Python is a programming language...",
-  "sources": ["file.pdf"],
-  "context": {"topic": "programming", "intent": "explanation"}
-}
-```
-
-### Document API
-
-**POST** `/api/documents/upload`
-- Content-Type: `multipart/form-data`
-- Field: `file`
-- Returns: Document metadata
-
-**GET** `/api/documents/list`
-- Returns: Array of uploaded documents
-
-### Settings API
-
-**GET** `/api/profile/:userId/settings`
-- Returns: User settings
-
-**PUT** `/api/profile/:userId/settings`
-- Body: Settings object
-- Returns: Updated settings
-
----
-
-## 🎓 Learn More
-
-### Documentation Files
-- `MARKDOWN_FORMATTING_DEMO.md` - Markdown examples
-- `MULTILINGUAL_SUPPORT.md` - Language feature details
-- `TEXT_TO_SPEECH_FEATURE.md` - TTS implementation
-- `RESPONSIVE_DESIGN_UPDATE.md` - Mobile responsiveness
-- `SETTINGS_FINAL_WORKING.md` - Settings features
-
-### External Resources
-- [Gemini AI Documentation](https://ai.google.dev/docs)
-- [React Documentation](https://react.dev/)
-- [TailwindCSS Documentation](https://tailwindcss.com/)
-- [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Rajan**
-- GitHub: [@Rajan7013](https://github.com/Rajan7013)
-- Repository: [Q-A-website](https://github.com/Rajan7013/Q-A-website)
-
----
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for powerful language model
-- React community for excellent framework
-- TailwindCSS for beautiful styling
-- All open-source contributors
-
----
-
-## 📞 Support
-
-If you have any questions or issues:
-
-1. Check the [Troubleshooting](#-troubleshooting) section
-2. Open an [Issue](https://github.com/Rajan7013/Q-A-website/issues)
-3. Read the documentation files in the project
-
----
-
-## 🗺️ Roadmap
-
-### Current Features ✅
-- ✅ Document upload & analysis
-- ✅ AI-powered Q&A
-- ✅ 8 languages support
-- ✅ Text-to-speech
-- ✅ Mobile responsive
-- ✅ Settings & profiles
-
-### Planned Features 🚧
-- 🔄 Database integration (PostgreSQL/MongoDB)
-- 🔄 User authentication (JWT/OAuth)
-- 🔄 Real-time collaboration
-- 🔄 Advanced analytics
-- 🔄 More language support
-- 🔄 Voice input
-- 🔄 Document comparison
-- 🔄 Export conversations
-
----
-
-## 📊 Project Stats
-
-- **Total Languages:** 8
-- **Supported File Types:** PDF, DOCX, TXT
-- **AI Model:** Gemini 2.5 Flash
-- **Max Document Size:** 50MB
-- **Response Time:** < 3 seconds
-- **Browser Support:** All modern browsers
-
----
-
-## 💡 Tips & Best Practices
-
-### For Best Results:
-1. **Upload clear, text-based documents** (avoid scanned images)
-2. **Ask specific questions** for better answers
-3. **Use context** - follow-up questions work great!
-4. **Select correct language** in settings
-5. **Use Chrome** for best text-to-speech quality
-
-### Performance Tips:
-- Keep documents under 10MB for faster processing
-- Close unused browser tabs
-- Clear chat history periodically
-- Update to latest Node.js version
-
----
-
-## 🎉 Getting Started Checklist
-
-- [ ] Node.js installed
-- [ ] Git installed
-- [ ] Repository cloned
-- [ ] Backend dependencies installed
-- [ ] Frontend dependencies installed
-- [ ] `.env` file created with Gemini API key
-- [ ] Backend running on port 5000
-- [ ] Frontend running on port 5173
-- [ ] Browser opened to localhost:5173
-- [ ] First document uploaded
-- [ ] First question asked
-- [ ] Language changed in settings
-- [ ] Text-to-speech tested
-
-**All checked? You're ready to go! 🚀**
-
----
-
-<div align="center">
-
-### ⭐ Star this repo if you find it helpful!
-
-Made with ❤️ by [Rajan](https://github.com/Rajan7013)
-
-</div>
+**Open Browser:** [http://localhost:5173](http://localhost:5173)

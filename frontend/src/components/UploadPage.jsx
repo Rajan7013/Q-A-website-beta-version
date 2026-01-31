@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Upload, FileText, File, FileCheck, FilePlus } from 'lucide-react';
+import { Upload, FileText, File, FileCheck, FilePlus, CheckCircle } from 'lucide-react';
 import { uploadDocument } from '../utils/api';
 
 const UploadPage = ({ onDocumentUpload }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
@@ -19,7 +20,13 @@ const UploadPage = ({ onDocumentUpload }) => {
       });
 
       onDocumentUpload(result.document);
-      alert('Document uploaded successfully!');
+      setUploadSuccess(true);
+
+      // Reset after 3 seconds
+      setTimeout(() => {
+        setUploadSuccess(false);
+      }, 3000);
+
     } catch (error) {
       const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
       alert(`Upload failed: ${errorMsg}`);
@@ -39,7 +46,15 @@ const UploadPage = ({ onDocumentUpload }) => {
         <p className="text-xl text-gray-400">PDF, DOCX, PPTX, TXT - We analyze them all!</p>
       </div>
 
-      <div className="bg-white/5 backdrop-blur-sm rounded-3xl p-12 border-2 border-dashed border-white/20 hover:border-purple-500 transition-all duration-300">
+      <div className="relative bg-white/5 backdrop-blur-sm rounded-3xl p-12 border-2 border-dashed border-white/20 hover:border-purple-500 transition-all duration-300 overflow-hidden">
+        {uploadSuccess && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 z-50 transition-all duration-500">
+            <CheckCircle className="w-24 h-24 text-green-500 mb-4 animate-bounce" />
+            <h3 className="text-3xl font-bold text-white animate-pulse">Upload Successfully!</h3>
+            <p className="text-gray-400 mt-2">Your document is ready.</p>
+          </div>
+        )}
+
         <div className="text-center space-y-6">
           <div className="inline-block p-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-3xl">
             <Upload className="w-16 h-16 text-white" />

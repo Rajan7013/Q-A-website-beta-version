@@ -21,6 +21,7 @@ export const QUESTION_TYPES = {
   TROUBLESHOOTING: 'troubleshooting', // "Fix this error", debugging
   LIST_BASED: 'list_based',         // "List all...", "Give me 10..."
   DEFINITION: 'definition',         // "Define X", "What does X mean?"
+  CONVERSATIONAL: 'conversational',  // "Hi", "Hello", "Who are you?"
   GENERAL: 'general'                // Everything else
 };
 
@@ -40,20 +41,20 @@ Query: "${query}"
 
 Return this exact JSON structure:
 {
-  "type": "factual|conceptual|procedural|comparative|technical|medical|academic|creative|data_analysis|troubleshooting|list_based|definition|general",
-  "intent": "learn|solve|compare|create|analyze|troubleshoot",
+  "type": "factual|conceptual|procedural|comparative|technical|medical|academic|creative|data_analysis|troubleshooting|list_based|definition|conversational|general",
+  "intent": "learn|solve|compare|create|analyze|troubleshoot|chat",
   "domain": "computer_science|medicine|math|business|engineering|general",
   "complexity": "simple|moderate|complex",
   "expectedLength": "brief|detailed|comprehensive",
   "keyConcepts": ["concept1", "concept2"],
-  "searchStrategy": "keyword_heavy|semantic_heavy|balanced",
+  "searchStrategy": "keyword_heavy|semantic_heavy|balanced|none",
   "requiresMultipleSources": true|false,
   "hasTechnicalTerms": true|false,
   "isAcademic": true|false
 }`;
 
     const response = await generateResponse(analysisPrompt, [], 'en');
-    
+
     // Extract JSON from response
     const jsonMatch = response.match(/\{[\s\S]*?\}/);
     if (!jsonMatch) {
@@ -62,7 +63,7 @@ Return this exact JSON structure:
     }
 
     const classification = JSON.parse(jsonMatch[0]);
-    
+
     // Validate required fields
     if (!classification.type || !classification.intent) {
       logger.warn('Invalid classification structure, using fallback');
@@ -71,21 +72,21 @@ Return this exact JSON structure:
 
     // Cache the result
     CLASSIFICATION_CACHE.set(cacheKey, classification);
-    
+
     // Limit cache size
     if (CLASSIFICATION_CACHE.size > MAX_CACHE_SIZE) {
       const firstKey = CLASSIFICATION_CACHE.keys().next().value;
       CLASSIFICATION_CACHE.delete(firstKey);
     }
 
-    logger.info('Query classified', { 
-      type: classification.type, 
+    logger.info('Query classified', {
+      type: classification.type,
       intent: classification.intent,
       strategy: classification.searchStrategy
     });
-    
+
     return classification;
-    
+
   } catch (error) {
     logger.error('Query analysis failed', { error: error.message });
     return fallbackClassification(query);
@@ -94,14 +95,18 @@ Return this exact JSON structure:
 
 function fallbackClassification(query) {
   const lower = query.toLowerCase();
-  
+
   // Simple pattern matching fallback
   let type = QUESTION_TYPES.GENERAL;
   let searchStrategy = 'balanced';
   let requiresMultipleSources = false;
-  
+
   // Detect question type
-  if (lower.match(/^(what is|define|meaning of|what does.*mean)/)) {
+  if (lower.match(/^(hi|hello|hey|greetings|morning|afternoon|evening|thanks|thank you|who are you|what can you do)/)) {
+    type = QUESTION_TYPES.CONVERSATIONAL;
+    searchStrategy = 'none';
+  }
+  else if (lower.match(/^(what is|define|meaning of|what does.*mean)/)) {
     type = QUESTION_TYPES.DEFINITION;
     searchStrategy = 'keyword_heavy';
   }
@@ -134,15 +139,15 @@ function fallbackClassification(query) {
     type = QUESTION_TYPES.MEDICAL;
     searchStrategy = 'semantic_heavy';
   }
-  
+
   // Detect complexity
   let complexity = 'moderate';
   if (lower.length < 20) complexity = 'simple';
   else if (lower.length > 100) complexity = 'complex';
-  
+
   // Detect academic
   const isAcademic = lower.match(/(marks|exam|test|assignment|study|subject)/) !== null;
-  
+
   return {
     type,
     intent: type === QUESTION_TYPES.TROUBLESHOOTING ? 'solve' : 'learn',
@@ -168,7 +173,7 @@ export function getSearchParams(classification) {
     temperature: 0.7,
     maxTokens: 4096
   };
-  
+
   // Adjust based on complexity
   if (classification.complexity === 'complex') {
     params.resultLimit = 200;      // ✅ Even more for complex queries
@@ -177,56 +182,60 @@ export function getSearchParams(classification) {
     params.resultLimit = 100;      // ✅ Still generous for simple queries
     params.maxTokens = 2048;
   }
-  
-  // Adjust based on type
-  if (classification.type === QUESTION_TYPES.FACTUAL || classification.type === QUESTION_TYPES.DEFINITION) {
-    params.minRelevanceScore = 0.15; // ✅ Still very low (15%)
-    params.keywordWeight = 0.5;      // ✅ More keyword weight for facts
-    params.semanticWeight = 0.5;
+
+  // 🔥 BOOST SEMANTIC SEARCH FOR CONCEPTUAL QUESTIONS
+  if (classification.type === QUESTION_TYPES.DEFINITION ||
+    classification.type === QUESTION_TYPES.CONCEPTUAL ||
+    classification.type === QUESTION_TYPES.FACTUAL) {
+    // For "What is", "Define", "Explain" questions - semantic search is KEY
+    params.minRelevanceScore = 0.05; // ✅ VERY low threshold
+    params.keywordWeight = 0.15;      // ✅ Low keyword weight
+    params.semanticWeight = 0.85;     // ✅ HIGH semantic weight for understanding
+    params.resultLimit = 200;         // ✅ More results to find conceptual matches
   }
-  
+
   // Adjust search strategy
   if (classification.searchStrategy === 'keyword_heavy') {
     params.keywordWeight = 0.6;    // ✅ Strong keyword focus
     params.semanticWeight = 0.4;
   } else if (classification.searchStrategy === 'semantic_heavy') {
-    params.keywordWeight = 0.2;    // ✅ Strong semantic focus
-    params.semanticWeight = 0.8;
+    params.keywordWeight = 0.1;    // ✅ VERY strong semantic focus
+    params.semanticWeight = 0.9;
   }
-  
+
   // Technical queries: prefer exact matches
-  if (classification.type === QUESTION_TYPES.TECHNICAL || 
-      classification.type === QUESTION_TYPES.TROUBLESHOOTING) {
+  if (classification.type === QUESTION_TYPES.TECHNICAL ||
+    classification.type === QUESTION_TYPES.TROUBLESHOOTING) {
     params.keywordWeight = 0.7;    // ✅ Technical needs exact keywords
     params.semanticWeight = 0.3;
     params.minRelevanceScore = 0.05; // ✅ SUPER LOW for technical
   }
-  
+
   // Conceptual queries: prefer meaning
-  if (classification.type === QUESTION_TYPES.CONCEPTUAL || 
-      classification.type === QUESTION_TYPES.COMPARATIVE) {
+  if (classification.type === QUESTION_TYPES.CONCEPTUAL ||
+    classification.type === QUESTION_TYPES.COMPARATIVE) {
     params.keywordWeight = 0.2;    // ✅ Concepts need understanding
     params.semanticWeight = 0.8;
     params.minRelevanceScore = 0.1; // ✅ Low threshold
   }
-  
+
   // Adjust temperature for creative queries
   if (classification.type === QUESTION_TYPES.CREATIVE) {
     params.temperature = 0.9;
-  } else if (classification.type === QUESTION_TYPES.TECHNICAL || 
-             classification.type === QUESTION_TYPES.FACTUAL) {
+  } else if (classification.type === QUESTION_TYPES.TECHNICAL ||
+    classification.type === QUESTION_TYPES.FACTUAL) {
     params.temperature = 0.5;      // ✅ Very low for maximum accuracy
   }
-  
+
   // Expected length
   if (classification.expectedLength === 'comprehensive' || classification.isAcademic) {
     params.maxTokens = 8192;
   } else if (classification.expectedLength === 'brief') {
     params.maxTokens = 2048;
   }
-  
+
   logger.debug('Search params optimized', params);
-  
+
   return params;
 }
 

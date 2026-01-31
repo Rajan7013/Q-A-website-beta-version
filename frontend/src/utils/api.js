@@ -52,6 +52,7 @@ export const sendMessage = async (message, sessionId, documents = [], context = 
     console.log('🌍 API: Sending message with language:', language);
     const response = await api.post('/query', {
       query: message,
+      sessionId, // Pass sessionId for context memory
       documentIds: documents.map(d => d.id),
       generatePdf: false,
       language: language  // Pass language to backend
@@ -79,11 +80,12 @@ export const clearChat = async (sessionId) => {
 };
 
 // Document API - Production endpoint with R2 storage
-export const uploadDocument = async (file, onProgress) => {
+export const uploadDocument = async (file, userId, onProgress) => {
   try {
     console.log('📤 Starting upload:', file.name, file.size, 'bytes');
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('userId', userId);
 
     const response = await api.post('/upload', formData, {
       headers: {
@@ -99,7 +101,7 @@ export const uploadDocument = async (file, onProgress) => {
       },
     });
     console.log('✅ Upload successful:', response.data);
-    return response.data;
+    return response.data.document || response.data; // Unwrap document object
   } catch (error) {
     console.error('❌ Upload error:', error.response?.data || error.message);
     throw error;
@@ -113,6 +115,16 @@ export const getDocuments = async () => {
   } catch (error) {
     console.error('Get documents error:', error);
     return [];
+  }
+};
+
+export const getDocumentUrl = async (documentId) => {
+  try {
+    const response = await api.get(`/doc/${documentId}`);
+    return response.data.url;
+  } catch (error) {
+    console.error('Get document URL error:', error);
+    throw error;
   }
 };
 
@@ -278,6 +290,37 @@ export const saveChatSession = async (userId, sessionId, title, messages) => {
   } catch (error) {
     console.error('Save chat session error:', error);
     throw error;
+  }
+};
+
+export const deleteChatSession = async (userId, sessionId) => {
+  try {
+    const response = await api.delete(`/history/${userId}/${sessionId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Delete chat session error:', error);
+    throw error;
+  }
+};
+
+export const renameChatSession = async (userId, sessionId, title) => {
+  try {
+    const response = await api.put(`/history/${userId}/${sessionId}`, { title });
+    return response.data;
+  } catch (error) {
+    console.error('Rename chat session error:', error);
+    throw error;
+  }
+};
+
+export const getChatSession = async (userId, sessionId) => {
+  try {
+    const response = await api.get(`/history/${userId}/${sessionId}`);
+    return response.data.chat;
+  } catch (error) {
+    console.error('Get chat session error:', error);
+    // Return null if not found
+    return null;
   }
 };
 
