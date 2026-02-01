@@ -50,7 +50,7 @@ This guide explains specifically how to deploy the **Frontend**, **Backend**, an
     *   `R2_ACCESS_KEY_ID`: `...`
     *   `R2_SECRET_ACCESS_KEY`: `...`
     *   `R2_BUCKET_NAME`: `qa-system-storage`
-    *   `CORS_ORIGIN`: `https://your-app.vercel.app` (The Frontend URL from Step 1).
+    *   `CORS_ORIGIN`: `https://rajan-docai.vercel.app` (The Frontend URL from Step 1).
     *   `CLOUDFLARE_ENDPOINT`: `https://<account_id>.r2.cloudflarestorage.com` (If not using auto-inference)
 5.  Click **Create Web Service**.
 
