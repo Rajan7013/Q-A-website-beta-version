@@ -1,4 +1,4 @@
-# 🚀 Detailed Monorepo Deployment Guide
+# 🚀 DocMind AI - Production Deployment Guide
 
 This guide explains specifically how to deploy the **Frontend**, **Backend**, and **Embedding Service** from this **single GitHub repository** (Monorepo).
 
@@ -37,7 +37,7 @@ This guide explains specifically how to deploy the **Frontend**, **Backend**, an
     *   **Region:** `Oregon` (or closest to specific R2/Supabase region).
     *   **Branch:** `main`
     *   **Root Directory:** `backend-unified` **(CRITICAL: The server lives here)**.
-    *   **Runtime:** `Node`
+    *   **Runtime:** `Node` (Ensure Node 18+)
     *   **Build Command:** `npm install`
     *   **Start Command:** `npm start`
     *   **Plan:** `Free` (Note: It spins down after 15 mins inactivity).
@@ -51,6 +51,7 @@ This guide explains specifically how to deploy the **Frontend**, **Backend**, an
     *   `R2_SECRET_ACCESS_KEY`: `...`
     *   `R2_BUCKET_NAME`: `qa-system-storage`
     *   `CORS_ORIGIN`: `https://your-app.vercel.app` (The Frontend URL from Step 1).
+    *   `CLOUDFLARE_ENDPOINT`: `https://<account_id>.r2.cloudflarestorage.com` (If not using auto-inference)
 5.  Click **Create Web Service**.
 
 **Wait:** It takes 2-3 minutes. Once live, copy the URL (e.g., `https://qa-backend.onrender.com`).

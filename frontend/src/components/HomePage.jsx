@@ -216,7 +216,7 @@ const HomePage = ({ setCurrentPage, uploadedDocs, userId, stats }) => {
       {/* Footer / Copyright */}
       <div className="text-center pt-10 border-t border-white/5">
         <p className="text-gray-600 text-sm">
-          © 2026 QA System. Built with ❤️ by Antigravity.
+          © 2026 QA System. Built with ❤️ by DocMind AI.
         </p>
       </div>
     </div>

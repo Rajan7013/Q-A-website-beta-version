@@ -80,10 +80,10 @@ const ChatMessage = ({
     return (
         <div
             id={`message-${msgIndex}`}
-            className={`flex items-start gap-2 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
+            className={`flex items-start gap-1.5 sm:gap-2 ${msg.type === 'user' ? 'flex-row-reverse' : ''}`}
         >
-            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${msg.type === 'user' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gradient-to-br from-blue-500 to-cyan-400'}`}>
-                {msg.type === 'user' ? <User className="w-4 h-4 text-white" /> : <Brain className="w-4 h-4 text-white" />}
+            <div className={`flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center shadow-lg ${msg.type === 'user' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-gradient-to-br from-blue-500 to-cyan-400'}`}>
+                {msg.type === 'user' ? <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" /> : <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
             </div>
 
             <div className={`p-3 rounded-2xl shadow-xl max-w-[95%] md:max-w-4xl ${msg.type === 'user' ? 'bg-gradient-to-br from-purple-600 to-pink-600 text-white rounded-br-none' : 'bg-gray-800 text-gray-200 rounded-bl-none'}`}>

@@ -1,4 +1,4 @@
-# 🤖 AI Document Intelligence Platform
+# 🧠 DocMind AI - Intelligent Document Analysis Platform
 
 > **Zero-Hallucination | Source-Grounded | Enterprise-Grade RAG System**
 
@@ -18,15 +18,16 @@ A production-ready Question & Answer system that uses **Retrieval Augmented Gene
   - Hybrid Search (Keyword + Semantic)
   - Cross-Encoder Reranking (Cohere/BGE)
   - Page-Aware Chunking & Citation
-- **🌍 Multilingual**: Supports 8+ languages with native TTS (Text-to-Speech)
+- **🎙️ Voice Interaction**: Real-time voice input and Text-to-Speech (TTS) response reading.
+- **🌍 Multilingual**: Supports 8+ languages with native TTS.
 - **🔒 Enterprise Security**:
   - Row Level Security (RLS) via Supabase
   - Private S3 Storage (Cloudflare R2)
   - Role-Based Access Control (Clerk)
 - **⚡ High Performance**:
-  - Redis Caching
   - Optimistic UI Updates
   - Streaming Responses
+  - Efficient Embedding Cache
 
 ---
 
@@ -136,5 +137,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <div align="center">
-  <sub>Built with ❤️ by Rajan • Powered by Gemini, Supabase, & Clerk</sub>
+  <sub>Built with ❤️ by Rajan • Powered by DocMind AI, Gemini, Supabase, & Clerk</sub>
 </div>

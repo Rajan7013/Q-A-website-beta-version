@@ -55,7 +55,7 @@ export default function Navbar() {
               </div>
               <div className="flex flex-col">
                 <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                  Antigravity
+                  DocMind AI
                   <span className="hidden sm:inline-block px-1.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-400 font-medium">
                     BETA
                   </span>

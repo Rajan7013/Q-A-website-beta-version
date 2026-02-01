@@ -1,5 +1,5 @@
-import React from 'react';
-import { Send, Mic, MicOff, Loader, Plus, Paperclip } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Send, Mic, MicOff, Loader, Paperclip } from 'lucide-react';
 
 const ChatInput = ({
     inputMessage,
@@ -10,32 +10,51 @@ const ChatInput = ({
     onStartVoice,
     onStopVoice,
     voiceSupported,
-    onUploadClick // New prop
+    onUploadClick
 }) => {
+    const textareaRef = useRef(null);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'; // Reset height
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 300)}px`; // Set new height, max 300px
+        }
+    }, [inputMessage]);
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!isTyping && !isListening) onSendMessage();
+        }
+    };
+
     return (
-        <div className="relative flex items-center bg-gray-800 rounded-3xl px-4 py-3 shadow-sm border border-gray-700/50 focus-within:border-gray-600 focus-within:bg-gray-750 transition-all">
+        <div className="relative flex items-end bg-gray-800 rounded-3xl px-3 py-2 shadow-sm border border-gray-700/50 focus-within:border-gray-600 focus-within:bg-gray-750 transition-all">
             {/* Left Action (Attachment) */}
             <button
                 onClick={onUploadClick}
-                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="p-2 mb-1 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
                 title="Upload Document"
             >
                 <Paperclip className="w-5 h-5" />
             </button>
 
             {/* Input Field */}
-            <input
-                type="text"
+            <textarea
+                ref={textareaRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isTyping && !isListening && onSendMessage()}
+                onKeyDown={handleKeyDown}
                 disabled={isTyping || isListening}
-                placeholder={isListening ? "Listening..." : "Message Antigravity"}
-                className="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:outline-none focus:ring-0 px-3 py-1 font-medium"
+                placeholder={isListening ? "Listening..." : "Message DocMind AI"}
+                className="flex-1 bg-transparent border-none text-white placeholder-gray-500 focus:outline-none focus:ring-0 px-3 py-2 font-medium resize-none max-h-[300px] overflow-y-auto"
+                style={{ height: '40px', minHeight: '40px' }}
+                rows={1}
             />
 
             {/* Right Actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
                 {voiceSupported && (
                     <button
                         onClick={isListening ? onStopVoice : onStartVoice}

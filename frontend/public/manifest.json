@@ -1,6 +1,6 @@
 {
-    "name": "AI Doc Analyzer",
-    "short_name": "DocAI",
+    "name": "DocMind AI",
+    "short_name": "DocMind",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#1f2937",

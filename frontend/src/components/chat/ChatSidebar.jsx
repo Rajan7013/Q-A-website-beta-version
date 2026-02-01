@@ -84,7 +84,7 @@ const ChatSidebar = ({ userId, currentSessionId, onSelectSession, onNewSession, 
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
                             <Brain className="w-6 h-6 text-blue-500" />
-                            Antigravity
+                            DocMind AI
                         </h2>
                         <div className="flex items-center gap-2">
                             <button onClick={onNewSession} className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg" title="New Chat">
@@ -198,7 +198,7 @@ const ChatSidebar = ({ userId, currentSessionId, onSelectSession, onNewSession, 
 
                 {/* Footer */}
                 <div className="p-4 border-t border-gray-800 text-xs text-center text-gray-600">
-                    Antigravity AI System v2.0
+                    DocMind AI System v2.0
                 </div>
             </div>
         </>
