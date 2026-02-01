@@ -20,6 +20,7 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
   const [chatMessages, setChatMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [chatContext, setChatContext] = useState({ topic: null, intent: null });
   const [speakingMessageId, setSpeakingMessageId] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -130,7 +131,7 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
     }
 
     try {
-      setIsTyping(true);
+      setIsUploading(true);
       const newDoc = await uploadDocument(file, userId);
       if (onDocumentUpload) onDocumentUpload(newDoc);
 
@@ -143,17 +144,99 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
     } catch (e) {
       alert('Upload failed: ' + e.message);
     } finally {
-      setIsTyping(false);
+      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  // Simplified handlers
-  const speakMessage = () => { }; const pauseSpeech = () => { }; const resumeSpeech = () => { }; const stopSpeech = () => { };
-  const startVoiceInput = () => { }; const stopVoiceInput = () => { };
+  // Voice Input Handlers
+  const recognitionRef = useRef(null);
+
+  const startVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      alert('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = selectedLanguage === 'hi' ? 'hi-IN' : 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputMessage(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+  };
+
+  const stopVoiceInput = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  // Text-to-Speech
+  const speakMessage = (id, text) => {
+    if (!('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel(); // Stop previous
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = selectedLanguage === 'hi' ? 'hi-IN' : 'en-US';
+
+    utterance.onend = () => {
+      setSpeakingMessageId(null);
+      setIsPaused(false);
+    };
+
+    utterance.onerror = () => {
+      setSpeakingMessageId(null);
+      setIsPaused(false);
+    };
+
+    setSpeakingMessageId(id);
+    setIsPaused(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const pauseSpeech = () => {
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
+    }
+  };
+
+  const resumeSpeech = () => {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+    }
+  };
+
+  const stopSpeech = () => {
+    window.speechSynthesis.cancel();
+    setSpeakingMessageId(null);
+    setIsPaused(false);
+  };
 
   return (
-    <div className="flex h-full bg-gray-900 text-gray-100 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-gray-900 text-gray-100 font-sans overflow-hidden">
 
       {/* Hidden File Input */}
       <input
@@ -192,7 +275,7 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
 
         {/* MESSAGES */}
         <div className="flex-1 overflow-y-auto w-full scrollbar-thin scrollbar-thumb-gray-800">
-          <div className="max-w-3xl mx-auto w-full px-4 py-6 space-y-6 pb-4">
+          <div className="max-w-5xl mx-auto w-full px-2 md:px-4 py-6 space-y-6 pb-4">
             {/* Empty State */}
             {chatMessages.length === 0 && !isTyping && (
               <div className="flex flex-col items-center justify-center h-[60vh] text-center opacity-70 animate-fade-in">
@@ -210,18 +293,41 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
                 msg={msg}
                 msgIndex={index}
                 onSpeak={speakMessage}
+                speakingMessageId={speakingMessageId}
+                isPaused={isPaused}
+                onPause={pauseSpeech}
+                onResume={resumeSpeech}
+                onStop={stopSpeech}
               />
             ))}
 
-            {isTyping && (
-              <div className="flex items-start gap-4 animate-fade-in pl-2">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center mt-1">
-                  <Brain className="w-4 h-4 text-blue-400" />
+            {/* Uploading Bubble */}
+            {isUploading && (
+              <div className="flex items-start gap-1.5 sm:gap-2 animate-fade-in pl-2">
+                <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
+                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
-                <div className="flex gap-1 mt-3">
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce delay-75"></div>
-                  <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce delay-150"></div>
+                <div className="p-3 bg-gray-800 text-gray-200 rounded-2xl rounded-bl-none shadow-xl border border-blue-500/20">
+                  <div className="flex items-center gap-3">
+                    <Loader className="w-4 h-4 text-blue-400 animate-spin" />
+                    <span className="text-sm">Uploading & analyzing document...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Typing Bubble */}
+            {isTyping && !isUploading && (
+              <div className="flex items-start gap-1.5 sm:gap-2 animate-fade-in pl-2">
+                <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center shadow-lg">
+                  <Brain className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                </div>
+                <div className="p-4 bg-gray-800 rounded-2xl rounded-bl-none shadow-xl">
+                  <div className="flex gap-1.5 grayscale opacity-70">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-150"></div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce delay-300"></div>
+                  </div>
                 </div>
               </div>
             )}
@@ -230,8 +336,8 @@ const ChatPage = ({ uploadedDocs, userId, setStats, settings, onDocumentDelete, 
         </div>
 
         {/* INPUT AREA */}
-        <div className="p-4 bg-gray-900 border-t border-gray-800">
-          <div className="max-w-3xl mx-auto w-full">
+        <div className="p-2 md:p-4 bg-gray-900 border-t border-gray-800">
+          <div className="max-w-5xl mx-auto w-full">
             <ChatInput
               inputMessage={inputMessage}
               setInputMessage={setInputMessage}
