@@ -116,14 +116,14 @@ We have comprehensive documentation to help you understand, deploy, and contribu
 
 ```mermaid
 graph TD
-    User[User] -->|HTTPS| Frontend[React Frontend (Vite)]
-    Frontend -->|Auth| Clerk[Clerk Auth]
-    Frontend -->|API| Backend[Node.js Express API]
-    Backend -->|Store| R2[Cloudflare R2 (Docs)]
-    Backend -->|Vector Search| Supabase[Supabase (pgvector)]
-    Backend -->|Generate| LLM[Gemini Pro / Flash]
-    Backend -->|Embed/Rerank| Embed[Python Embedding Service]
-    Embed -->|Hugging Face| HF[HF Spaces (Docker)]
+    User([User]) -->|HTTPS| Frontend["React Frontend (Vite)"]
+    Frontend -->|Auth| Clerk["Clerk Auth"]
+    Frontend -->|API| Backend["Node.js Express API"]
+    Backend -->|Store| R2["Cloudflare R2 (Docs)"]
+    Backend -->|Vector Search| Supabase["Supabase (pgvector)"]
+    Backend -->|Generate| LLM["Gemini Pro / Flash"]
+    Backend -->|Embed/Rerank| Embed["Python Embedding Service"]
+    Embed -->|Hugging Face| HF["HF Spaces (Docker)"]
 ```
 
 ---
