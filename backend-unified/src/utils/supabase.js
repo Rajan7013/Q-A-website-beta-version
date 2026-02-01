@@ -47,6 +47,64 @@ export async function ensureUser(userId, email, firstName, lastName) {
   }
 }
 
+export async function updateUserProfile(userId, profileData) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        first_name: profileData.name?.split(' ')[0] || '',
+        last_name: profileData.name?.split(' ').slice(1).join(' ') || '',
+        bio: profileData.bio,
+        job_title: profileData.jobTitle,
+        location: profileData.location,
+        website: profileData.website,
+        phone: profileData.phone,
+        profile_picture: profileData.profilePicture
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    logger.info('User profile updated', { userId });
+    return data;
+  } catch (error) {
+    logger.error('Failed to update user profile', { error: error.message, userId });
+    throw error;
+  }
+}
+
+export async function getProfile(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    // Transform DB fields to frontend format
+    return {
+      id: data.id,
+      name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+      email: data.email,
+      bio: data.bio || '',
+      jobTitle: data.job_title || '',
+      location: data.location || '',
+      website: data.website || '',
+      phone: data.phone || '',
+      profilePicture: data.profile_picture || null,
+      joined: new Date(data.created_at).toLocaleDateString()
+    };
+  } catch (error) {
+    logger.error('Failed to get user profile', { error: error.message, userId });
+    throw error;
+  }
+}
+
 export async function createDocument(userId, documentData) {
   try {
     const { data, error } = await supabase
@@ -317,4 +375,3 @@ export async function getDocumentMetadata(documentIds) {
 }
 
 export default supabase;
-
