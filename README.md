@@ -149,18 +149,19 @@ graph TB
     classDef secureLayer fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d;
     classDef dataLayer fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12;
     classDef aiLayer fill:#f3e8ff,stroke:#a855f7,stroke-width:2px,color:#581c87;
-    classDef externalNode fill:#f9fafb,stroke:#6b7280,stroke-width:1px,stroke-dasharray: 5 5;
 
     %% --- 1. CLIENT LAYER ---
     subgraph Client_Zone ["📱 User Interface Layer"]
-        User([👤 End User])
+        direction TB
+        User(["👤 End User"])
         
         subgraph App_Frontend ["Frontend Application"]
-            UI[React UI / Chat Interface]:::clientLayer
-            Voice[🎙️ Web Speech API]:::clientLayer
+            UI["React UI / Chat Interface"]:::clientLayer
+            Voice["🎙️ Web Speech API"]:::clientLayer
         end
 
-        Auth[🔐 Clerk Authentication]:::clientLayer
+        Auth["🔐 Clerk Authentication"]:::clientLayer
+        
         User ==> UI
         User -.->|Voice Input| Voice
         UI -.->|Verify Identity| Auth
@@ -168,11 +169,12 @@ graph TB
 
     %% --- 2. SECURE APP LAYER ---
     subgraph Secure_Zone ["🛡️ Secure Application Layer"]
-        Gateway[⚙️ Backend API Gateway\n(Express.js / Node.js)]:::secureLayer
-        Middleware[🛡️ Validation & Security Middleware]:::secureLayer
+        direction TB
+        Gateway["⚙️ Backend API Gateway<br>(Express.js / Node.js)"]:::secureLayer
+        Middleware["🛡️ Validation & Security Middleware"]:::secureLayer
         
         subgraph Processing ["AI Processing Unit"]
-            EmbedService[🧠 Embedding Microservice\n(Python / HuggingFace)]:::secureLayer
+            EmbedService["🧠 Embedding Microservice<br>(Python / HuggingFace)"]:::secureLayer
         end
 
         UI <==>|HTTPS / JSON| Gateway
@@ -182,12 +184,13 @@ graph TB
 
     %% --- 3. DATA PERSISTENCE LAYER ---
     subgraph Data_Zone ["💾 Data Persistence Layer"]
+        direction TB
         subgraph Vector_Store ["Vector Database"]
-            PGVector[(🗄️ Supabase / pgvector\n384-dim Embeddings)]:::dataLayer
+            PGVector[("🗄️ Supabase / pgvector<br>384-dim Embeddings")]:::dataLayer
         end
         
         subgraph File_Store ["Object Storage"]
-            R2[(☁️ Cloudflare R2\nEncrypted Documents)]:::dataLayer
+            R2[("☁️ Cloudflare R2<br>Encrypted Documents")]:::dataLayer
         end
         
         Gateway <==>|Read/Write Metadata| PGVector
@@ -196,7 +199,7 @@ graph TB
 
     %% --- 4. GEN-AI LAYER ---
     subgraph AI_Zone ["🤖 Generative AI Layer"]
-        LLM[✨ Google Gemini Pro\n(Context-Aware Generation)]:::aiLayer
+        LLM["✨ Google Gemini Pro<br>(Context-Aware Generation)"]:::aiLayer
     end
 
     %% --- DATA FLOWS ---
