@@ -138,6 +138,65 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 🔄 System Workflow & User Journey
+
+Here is the complete flow of data from User Interaction to AI Response:
+
+```mermaid
+graph TD
+    %% Style Definitions
+    classDef client fill:#3b82f6,stroke:#1d4ed8,color:white;
+    classDef server fill:#10b981,stroke:#047857,color:white;
+    classDef storage fill:#f59e0b,stroke:#b45309,color:white;
+    classDef ai fill:#8b5cf6,stroke:#5b21b6,color:white;
+
+    %% Client Layers
+    User([👤 User])
+    Frontend[💻 Frontend UI\n(React + Vite + Voice API)]:::client
+    Auth[🔐 Clerk Auth\n(Identity & Access)]:::client
+
+    %% Backend Layers
+    Backend[⚙️ Backend API\n(Node.js + Express)]:::server
+    EmbedService[🧠 Embedding Service\n(Python Microservice)]:::server
+
+    %% Storage & AI Layers
+    R2[(☁️ Cloudflare R2\nFile Storage)]:::storage
+    DB[(🗄️ Supabase\nVector DB & Metadata)]:::storage
+    Gemini[🤖 Google Gemini\nGenerative AI]:::ai
+
+    %% 1. Authentication Flow
+    subgraph Auth_Flow [1. Authentication]
+        User -->|Log In| Auth
+        Auth -->|Token| Frontend
+    end
+
+    %% 2. Upload Flow
+    subgraph Upload_Flow [2. Document Processing]
+        Frontend -->|Upload File| Backend
+        Backend -->|Store PDF| R2
+        Backend -->|Request Vector| EmbedService
+        EmbedService -->|Return 384-dim Vector| Backend
+        Backend -->|Save Vectors + Meta| DB
+    end
+
+    %% 3. Q&A Flow
+    subgraph QA_Flow [3. Q&A & RAG]
+        User -->|Ask Question / Voice| Frontend
+        Frontend -->|Send Query| Backend
+        Backend -->|Semantic Search| DB
+        DB -->|Relevant Chunks| Backend
+        Backend -->|Context + Prompt| Gemini
+        Gemini -->|AI Answer| Backend
+        Backend -->|Stream Response| Frontend
+        Frontend -->|Text-to-Speech| User
+    end
+
+    %% Connections
+    Backend <==> Frontend
+```
+
+---
+
 <div align="center">
   <sub>Built with ❤️ by Rajan • Powered by DocMind AI, Gemini, Supabase, & Clerk</sub>
 </div>
