@@ -62,7 +62,7 @@ router.post('/', requireAuth, uploadRateLimiter, upload.single('file'), async (r
           for (const page of savedPages) {
             try {
               const embedding = await embeddingClient.generateEmbedding(page.content);
-              if (embedding && embedding.length === 768) {
+              if (embedding && embedding.length === (parseInt(process.env.EMBEDDING_DIMENSION) || 384)) {
                 await supabase
                   .from('document_pages')
                   .update({ embedding })

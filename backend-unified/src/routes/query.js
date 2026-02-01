@@ -100,7 +100,7 @@ router.post('/', requireAuth, geminiRateLimiter, async (req, res) => {
             const normalizedQ = normalizedQueries[i];
             const originalQ = queries[i];
             const embedding = await embeddingClient.generateEmbedding(normalizedQ);
-            if (embedding && embedding.length === 768) {
+            if (embedding && embedding.length === (parseInt(process.env.EMBEDDING_DIMENSION) || 384)) {
               // Store both normalized (for search) and original (for logging)
               queryEmbeddings.push({
                 query: normalizedQ,  // Use normalized for search

@@ -97,7 +97,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       await Promise.all(batch.map(async (page, idx) => {
         try {
           const vector = await embeddingClient.generateEmbedding(page.content);
-          if (vector && vector.length === 768) {
+          if (vector && vector.length === (parseInt(process.env.EMBEDDING_DIMENSION) || 384)) {
             pageRecords.push({
               document_id: docRecord.id, // Supabase UUID
               page_number: page.pageNumber || (i + idx + 1),
