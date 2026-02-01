@@ -232,7 +232,7 @@ if __name__ == "__main__":
     print("🚀 Starting BGE Embedding Service")
     print("=" * 60)
     print(f"📡 Port: {port}")
-    print(f"🧠 Model: BAAI/bge-base-en-v1.5 (768 dims)")
+    print(f"🧠 Model: sentence-transformers/all-MiniLM-L6-v2 (384 dims)")
     print(f"🎯 Reranker: BAAI/bge-reranker-base")
     print(f"💾 Cache: {'Enabled (Redis)' if REDIS_AVAILABLE else 'Disabled'}")
     print("=" * 60)
