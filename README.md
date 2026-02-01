@@ -7,6 +7,8 @@
 ![Python](https://img.shields.io/badge/Python-3.10-yellow.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)
 
+### 🚀 **Live Demo:** [https://rajan-docai.vercel.app](https://rajan-docai.vercel.app)
+
 A production-ready Question & Answer system that uses **Retrieval Augmented Generation (RAG)** to provide accurate, citation-backed answers from your documents. Built with security, scalability, and multi-tenancy in mind.
 
 ---

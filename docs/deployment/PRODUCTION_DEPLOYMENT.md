@@ -8,7 +8,7 @@ This guide explains specifically how to deploy the **Frontend**, **Backend**, an
 
 ## 1. Frontend Deployment (Vercel)
 
-**Goal:** Hosted at `https://your-app.vercel.app`
+**Goal:** Hosted at `https://rajan-docai.vercel.app`
 
 1.  **Go to Vercel Dashboard**: Click **"Add New..."** -> **"Project"**.
 2.  **Import Git Repository**: Select your `qa-system` repo.
