@@ -1,21 +1,48 @@
-# Contributing to Q&A System
+# Contributing to QA System
 
-We love your input! We want to make contributing to this project as easy and transparent as possible.
+Thank you for your interest in contributing! We welcome contributions from everyone.
 
-## Quick Links
+## 🚀 Getting Started
 
-- [Detailed Contributing Guide](docs/contributing/CONTRIBUTING.md) - **Read this first!**
-- [Local Development Setup](docs/deployment/LOCAL_DEVELOPMENT.md)
-- [Project Architecture](docs/architecture/SYSTEM_ARCHITECTURE.md)
+1.  **Fork the repository** on GitHub.
+2.  **Clone your fork** locally:
+    ```bash
+    git clone https://github.com/your-username/Q-A-website.git
+    cd Q-A-website
+    ```
+3.  **Create a branch** for your feature or bugfix:
+    ```bash
+    git checkout -b feature/amazing-feature
+    ```
+4.  **Install dependencies** (see README.md).
 
-## How to Contribute
+## 🛠️ Development Workflow
 
-1. **Fork and Clone**: Fork the repo and clone it locally.
-2. **Branch**: Create a new branch for your feature (`git checkout -b feature/amazing-feature`).
-3. **Commit**: Commit your changes with a descriptive message.
-4. **Push**: Push to your branch (`git push origin feature/amazing-feature`).
-5. **Pull Request**: Open a PR targeting the `main` branch.
+-   **Backend**: Located in `backend-unified/`. Run with `npm run dev`.
+-   **Frontend**: Located in `frontend/`. Run with `npm run dev`.
+-   **Embedding Service**: Located in `embedding-service/`. Run with `python server.py`.
 
-## Code of Conduct
+### Code Style
+-   Use **ES6+** syntax for JavaScript.
+-   Use **Async/Await** for asynchronous operations.
+-   Follow the existing folder structure.
+-   Add comments for complex logic.
 
-Please be respectful and considerate of others when contributing to this project.
+## 📦 Pull Request Process
+
+1.  Ensure your code works locally.
+2.  Update documentation if you changed any behavior.
+3.  Submit a Pull Request (PR) to the `main` branch.
+4.  Describe your changes clearly in the PR description.
+
+## 🐛 Reporting Bugs
+
+If you find a bug, please open an Issue on GitHub with:
+-   Steps to reproduce
+-   Expected behavior
+-   Actual behavior
+-   Screenshots (if applicable)
+
+## 📄 License
+
+By contributing, you agree that your contributions will be licensed under its MIT License.

@@ -1,139 +1,140 @@
-# 🤖 AI Q&A System - Project Documentation
-> **Deployment Status:** Ready for Production 🚀
+# 🤖 AI Document Intelligence Platform
 
+> **Zero-Hallucination | Source-Grounded | Enterprise-Grade RAG System**
 
-**The Complete Guide to the Architecture, Setup, and Development of the Q&A System.**
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)
+![Python](https://img.shields.io/badge/Python-3.10-yellow.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)
 
-> **READ THIS FIRST:** This project is a complex, multi-service application (Frontend, Backend, AI, Database, Storage). Success depends on following the **detailed guides** linked below.
-
----
-
-## 📚 Table of Contents
-
-1.  [Concept & Architecture](#-concept--architecture)
-2.  [Detailed Setup Guides](#-detailed-setup-guides-step-by-step)
-3.  [Project Structure](#-project-structure-minute-details)
-4.  [How to Collaborate](#-how-to-collaborate)
-5.  [Update Strategy](#-update-strategy)
+A production-ready Question & Answer system that uses **Retrieval Augmented Generation (RAG)** to provide accurate, citation-backed answers from your documents. Built with security, scalability, and multi-tenancy in mind.
 
 ---
 
-## 🏛️ Concept & Architecture
+## ✨ Key Features
 
-This system allows a user to **chat with their documents**.
-*   **Flow:** Upload PDF -> Extract Text -> Generate Vectors (AI) -> Store in DB -> User Asks Question -> Search Vectors -> Generate Answer.
-
-### Key Components (How we use them)
-*   **Frontend (React):** The user interface. It talks to the Backend API.
-*   **Backend (Node.js):** The "brain". It orchestrates Supabase, Cloudflare R2, and Gemini AI.
-*   **Supabase (PostgreSQL):** Stores *metadata* (filenames) and *embeddings* (the mathematical representation of text).
-*   **Cloudflare R2:** Stores the *actual* PDF files cheaply (10GB free).
-*   **Clerk:** Handles who is logging in.
-
-👉 **[Read SYSTEM_ARCHITECTURE.md for the full diagram](docs/architecture/SYSTEM_ARCHITECTURE.md)**
-
----
-
-## �️ Detailed Setup Guides (Step-by-Step)
-
-To run this project, you must configure 3 external services. We have minute-by-minute guides for each:
-
-### 1. Database (Supabase) 🗄️
-*   **Goal:** Create tables and get API keys.
-*   **Details:** We use specific SQL queries to create `documents` and `document_pages` tables with `vector` support.
-*   👉 **[READ: Supabase Detailed Setup](docs/setup/SUPABASE_SETUP.md)**
-
-### 2. Authentication (Clerk) 🔐
-*   **Goal:** Allow users to log in with Google.
-*   **Details:** Configure "Publishable Key" (Frontend) and "Secret Key" (Backend).
-*   👉 **[READ: Clerk Detailed Setup](docs/setup/CLERK_SETUP.md)**
-
-### 3. File Storage (Cloudflare R2) ☁️
-*   **Goal:** Store user PDFs for free.
-*   **Details:** Includes instructions on **Bank Card Verification** (Required for free tier) and **CORS JSON** settings.
-*   👉 **[READ: Cloudflare R2 Detailed Setup](docs/setup/CLOUDFLARE_R2_SETUP.md)**
-
-### 4. API Keys (Gemini/Groq) 🔑
-*   **Goal:** Give the AI its intelligence.
-*   👉 **[READ: API Keys Guide](docs/setup/API_KEYS.md)**
+- **📄 Universal Document Support**: PDF, DOCX, PPTX, TXT (up to 100MB)
+- **🧠 Advanced RAG Pipeline**:
+  - Hybrid Search (Keyword + Semantic)
+  - Cross-Encoder Reranking (Cohere/BGE)
+  - Page-Aware Chunking & Citation
+- **🌍 Multilingual**: Supports 8+ languages with native TTS (Text-to-Speech)
+- **🔒 Enterprise Security**:
+  - Row Level Security (RLS) via Supabase
+  - Private S3 Storage (Cloudflare R2)
+  - Role-Based Access Control (Clerk)
+- **⚡ High Performance**:
+  - Redis Caching
+  - Optimistic UI Updates
+  - Streaming Responses
 
 ---
 
-## 📁 Project Structure (Minute Details)
+## 🚀 Quick Start
 
-Understanding the folder structure is key to "minute details" collaboration.
+### Prerequisites
+- Node.js v18+
+- Python 3.10+ (for local embedding service)
+- Git
 
-```
-root/
-├── backend-unified/           # THE BACKEND SERVER
-│   ├── src/
-│   │   ├── server.js          # Entry point (port 5000)
-│   │   ├── routes/            # API Endpoints
-│   │   │   ├── chat.js        # The Main QA Logic (Prompt Engineering)
-│   │   │   └── upload.js      # Handles file uploads to R2
-│   │   └── supabase/
-│   │       └── NEW_PROJECT_SETUP.sql  # The Database Schema Source of Truth
-│   └── .env                   # BE CAREFUL (Contains Secret Keys)
-│
-├── frontend/                  # THE UI
-│   ├── src/
-│   │   ├── components/        # React Components
-│   │   └── utils/
-│   │       └── api.js         # Frontend-to-Backend Connection Logic
-│   └── .env                   # Contains Public Keys
-│
-└── docs/                      # DOCUMENTATION HUB
-    ├── setup/                 # Service Guides
-    ├── architecture/          # Design Docs
-    └── contributing/          # How to push code
+### 1. Clone Repository
+```bash
+git clone https://github.com/Rajan7013/Q-A-website.git
+cd Q-A-website
 ```
 
----
+### 2. Install Dependencies
+```bash
+# Backend
+cd backend-unified
+npm install
 
-## 🤝 How to Collaborate
+# Frontend
+cd ../frontend
+npm install
+```
 
-Anyone can collaborate! Here is the process:
+### 3. Setup Environment
+Copy the example environment file and fill in your keys:
+```bash
+cp .env.example backend-unified/.env
+cp .env.example frontend/.env
+```
+> 📖 **[Read the Environment Setup Guide](docs/03-SETUP-GUIDES/environment-setup.md)** for detailed instructions on getting API keys.
 
-1.  **Read the Docs:** Specifically the **Setup Guides** above.
-2.  **Pull the Code:** `git clone ...`
-3.  **Cross-Check:** Always look at `backend-unified/src/server.js` to see what the server is actually doing.
-4.  **Database Updates:** If you change the database, update `backend-unified/supabase/NEW_PROJECT_SETUP.sql`. This is our "Source of Truth".
-
-👉 **[Read CONTRIBUTING.md](docs/contributing/CONTRIBUTING.md)**
-
----
-
-## 🔄 Update Strategy
-
-**How do we update the system without breaking things?**
-
-1.  **Database Changes:**
-    *   NEVER delete tables.
-    *   ALWAYS write an `.sql` migration file (e.g., `ALTER TABLE users ADD column...`).
-    *   Test it in Supabase SQL Editor first.
-
-2.  **Frontend Updates:**
-    *   Frontend relies on Backend APIs.
-    *   If you change a Backend API response, check `frontend/src/utils/api.js` to ensure the frontend can handle it.
-
----
-
-## 🚀 Quick Start Commands
-
-Once you have followed the **Setup Guides** and filled your `.env` files:
-
+### 4. Run Locally
 **Terminal 1 (Backend):**
 ```bash
 cd backend-unified
-npm install
 npm run dev
 ```
 
 **Terminal 2 (Frontend):**
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
 
-**Open Browser:** [http://localhost:5173](http://localhost:5173)
+**Terminal 3 (Embedding Service):**
+```bash
+cd embedding-service
+pip install -r requirements.txt
+python server.py
+# Or use Docker: docker-compose up embedding-service
+```
+
+Visit `http://localhost:5173` to start!
+
+---
+
+## 📚 Documentation
+
+We have comprehensive documentation to help you understand, deploy, and contribute:
+
+### 🛠️ Setup Guides
+- **[Supabase Setup](docs/03-SETUP-GUIDES/supabase-setup.md)** - Database & Auth
+- **[Clerk Auth Setup](docs/03-SETUP-GUIDES/clerk-setup.md)** - User Management
+- **[Cloudflare R2 Setup](docs/03-SETUP-GUIDES/cloudflare-r2-setup.md)** - Object Storage
+- **[Embedding Models](docs/03-SETUP-GUIDES/embedding-service-setup.md)** - Python Service
+
+### ☁️ Deployment
+- **[Frontend (Vercel)](docs/04-DEPLOYMENT/vercel-deployment.md)**
+- **[Backend (Railway/Render)](docs/04-DEPLOYMENT/backend-deployment.md)**
+- **[Embedding Service (Hugging Face)](docs/04-DEPLOYMENT/hugging-face-deployment.md)** 🆕
+
+### 💻 Development
+- **[Architecture Overview](docs/02-ARCHITECTURE.md)**
+- **[API Reference](docs/05-DEVELOPMENT/api-reference.md)**
+- **[Contributing Guidelines](CONTRIBUTING.md)**
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    User[User] -->|HTTPS| Frontend[React Frontend (Vite)]
+    Frontend -->|Auth| Clerk[Clerk Auth]
+    Frontend -->|API| Backend[Node.js Express API]
+    Backend -->|Store| R2[Cloudflare R2 (Docs)]
+    Backend -->|Vector Search| Supabase[Supabase (pgvector)]
+    Backend -->|Generate| LLM[Gemini Pro / Flash]
+    Backend -->|Embed/Rerank| Embed[Python Embedding Service]
+    Embed -->|Hugging Face| HF[HF Spaces (Docker)]
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to submit pull requests, report issues, and suggest improvements.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by Rajan • Powered by Gemini, Supabase, & Clerk</sub>
+</div>

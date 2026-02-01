@@ -226,7 +226,7 @@ async def rerank_documents(request: RerankRequest):
 if __name__ == "__main__":
     import uvicorn
     
-    port = int(os.getenv("PORT", 8001))
+    port = int(os.getenv("PORT", 7860))
     
     print("=" * 60)
     print("🚀 Starting BGE Embedding Service")
