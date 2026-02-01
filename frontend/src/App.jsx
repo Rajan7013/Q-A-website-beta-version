@@ -9,6 +9,7 @@ import SettingsPage from './components/SettingsPage';
 import ProfilePage from './components/ProfilePage';
 import InstallPrompt from './components/InstallPrompt';
 import LoginPage from './components/LoginPage';
+import SignUpPage from './components/SignUpPage';
 import { getDocuments, getProfile, getSettings, getStats, incrementStat, unlockAchievement, setClerkTokenGetter } from './utils/api';
 
 function App() {
@@ -56,7 +57,8 @@ function App() {
 
   useEffect(() => {
     if (isSignedIn && getToken) {
-      setClerkTokenGetter(getToken);
+      // Wrap in arrow function to ensure it's called freshly
+      setClerkTokenGetter(async () => await getToken());
       fetchInitialData();
     }
   }, [isSignedIn, userId, getToken]);
@@ -101,6 +103,7 @@ function App() {
         <div className="max-w-md w-full p-8">
           <Routes>
             <Route path="/sign-in" element={<LoginPage />} />
+            <Route path="/sign-up" element={<SignUpPage />} />
             <Route
               path="/sso-callback"
               element={<AuthenticateWithRedirectCallback />}
